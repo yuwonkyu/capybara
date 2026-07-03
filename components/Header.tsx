@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import AuthButton from "@/components/AuthButton";
 import { BOARD_TYPES } from "@/lib/types";
-import { EXTERNAL_LINKS } from "@/lib/links";
+import { getVisibleLinks } from "@/lib/links";
+import { useAuthUser } from "@/lib/use-auth-user";
 
 const NAV_LINKS = [
   { href: "/", label: "홈" },
@@ -16,6 +17,8 @@ const NAV_LINKS = [
 
 const Header = (): JSX.Element => {
   const pathname = usePathname();
+  const { user } = useAuthUser();
+  const quickLinks = getVisibleLinks(Boolean(user));
 
   return (
     <header className="mb-5 rounded-3xl border border-white/60 bg-cream/80 p-4 shadow-candy backdrop-blur sm:p-5">
@@ -46,7 +49,7 @@ const Header = (): JSX.Element => {
       </div>
 
       <div className="mt-3 flex flex-wrap gap-1.5 border-t border-sand/60 pt-3">
-        {EXTERNAL_LINKS.map((link) => (
+        {quickLinks.map((link) => (
           <a
             key={link.href}
             href={link.href}

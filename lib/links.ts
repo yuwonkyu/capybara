@@ -2,6 +2,8 @@ export type ExternalLink = {
   label: string;
   href: string;
   description: string;
+  /** true면 로그인한 회원에게만 노출 */
+  membersOnly?: boolean;
 };
 
 export const EXTERNAL_LINKS: ExternalLink[] = [
@@ -25,4 +27,13 @@ export const EXTERNAL_LINKS: ExternalLink[] = [
     href: "https://open.kakao.com/o/gh9HKWAi",
     description: "길드 공지 전용 채팅방",
   },
+  {
+    label: "디스코드",
+    href: "https://discord.com/invite/BCznYgcBZ",
+    description: "길드 디스코드 서버 (회원 전용)",
+    membersOnly: true,
+  },
 ];
+
+export const getVisibleLinks = (isLoggedIn: boolean): ExternalLink[] =>
+  EXTERNAL_LINKS.filter((link) => !link.membersOnly || isLoggedIn);

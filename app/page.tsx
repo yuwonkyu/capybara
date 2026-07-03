@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import LatestPosts from "@/components/LatestPosts";
-import { EXTERNAL_LINKS } from "@/lib/links";
+import { getVisibleLinks } from "@/lib/links";
+import { getAuthUser } from "@/lib/supabase-server";
 import { BOARD_TYPES } from "@/lib/types";
 
 const highlights = [
@@ -10,7 +11,10 @@ const highlights = [
   "길드 스킬로 경험치 향상 지원 예정",
 ];
 
-const Home = (): JSX.Element => {
+const Home = async (): Promise<JSX.Element> => {
+  const user = await getAuthUser();
+  const shortcutLinks = getVisibleLinks(Boolean(user));
+
   return (
     <>
       <section className="mb-5 overflow-hidden rounded-3xl border border-sand bg-gradient-to-br from-[#fbf8f1] via-[#e9f6ee] to-[#e7f2fa] shadow-candy">
@@ -83,7 +87,7 @@ const Home = (): JSX.Element => {
           방송과 길드 채팅방은 아래 링크에서 만나볼 수 있어요.
         </p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {EXTERNAL_LINKS.map((link) => (
+          {shortcutLinks.map((link) => (
             <a
               key={link.href}
               href={link.href}

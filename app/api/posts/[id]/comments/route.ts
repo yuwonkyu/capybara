@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase";
-import { getAuthUser, getDisplayName } from "@/lib/supabase-server";
+import { getAuthUser } from "@/lib/supabase-server";
+import { getDisplayName } from "@/lib/user";
 
 type RouteParams = { params: Promise<{ id: string }> };
 

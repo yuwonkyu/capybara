@@ -38,13 +38,3 @@ export const getAuthUser = async (): Promise<User | null> => {
 
   return user;
 };
-
-export const getDisplayName = (user: User): string => {
-  const metadata = user.user_metadata ?? {};
-  return (
-    metadata.name ??
-    metadata.full_name ??
-    metadata.preferred_username ??
-    "길드원"
-  );
-};

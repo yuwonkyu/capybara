@@ -1,46 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import type { User } from "@supabase/supabase-js";
-import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
-
-const displayName = (user: User): string => {
-  const metadata = user.user_metadata ?? {};
-  return (
-    metadata.name ??
-    metadata.full_name ??
-    metadata.preferred_username ??
-    "길드원"
-  );
-};
+import { useAuthUser } from "@/lib/use-auth-user";
+import { getAvatarUrl, getDisplayName } from "@/lib/user";
 
 const AuthButton = (): JSX.Element | null => {
   const router = useRouter();
   const pathname = usePathname();
-  const supabase = useMemo(() => getSupabaseBrowserClient(), []);
-  const [user, setUser] = useState<User | null>(null);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    if (!supabase) {
-      setReady(true);
-      return;
-    }
-
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
-      setReady(true);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [supabase]);
+  const { supabase, user, ready } = useAuthUser();
 
   // 세션 확인 중에는 잠깐 숨겨서 로그인/로그아웃 버튼이 깜빡이지 않게 한다
   if (supabase && !ready) return null;
@@ -56,7 +24,7 @@ const AuthButton = (): JSX.Element | null => {
       provider: "kakao",
       options: {
         redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(pathname)}`,
-        // 카카오 앱에 설정된 동의항목(닉네임)만 요청한다 — 이메일/프로필사진을 요청하면 KOE205 발생
+        // 카카오 앱에 설정된 동의항목만 요청한다 — 미설정 항목을 요청하면 KOE205 발생
         scopes: "profile_nickname",
       },
     });
@@ -83,11 +51,27 @@ const AuthButton = (): JSX.Element | null => {
     );
   }
 
+  const avatarUrl = getAvatarUrl(user);
+
   return (
     <div className="flex items-center gap-2">
+      {avatarUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={avatarUrl}
+          alt="프로필 사진"
+          className="h-7 w-7 rounded-full border border-sand object-cover"
+        />
+      )}
       <span className="font-body text-sm text-ink/80">
-        <span className="font-semibold text-mintdeep">{displayName(user)}</span> 님
+        <span className="font-semibold text-mintdeep">{getDisplayName(user)}</span> 님
       </span>
+      <Link
+        href="/profile"
+        className="font-body rounded-full border border-sand bg-white px-3 py-1.5 text-xs text-ink/70 transition hover:bg-cream"
+      >
+        내 정보
+      </Link>
       <button
         type="button"
         onClick={handleLogout}
