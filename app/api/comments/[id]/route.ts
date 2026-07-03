@@ -1,24 +1,24 @@
-import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
+import { isAdminUser } from "@/lib/admin";
 import { getSupabaseServerClient } from "@/lib/supabase";
+import { getAuthUser } from "@/lib/supabase-server";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   const { id } = await params;
-  const body = await request.json().catch(() => ({}));
-  const { password } = body ?? {};
-
-  if (!password) {
-    return NextResponse.json({ error: "비밀번호를 입력해주세요." }, { status: 400 });
-  }
 
   try {
+    const user = await getAuthUser();
+    if (!user) {
+      return NextResponse.json({ error: "카카오 로그인이 필요합니다." }, { status: 401 });
+    }
+
     const supabase = getSupabaseServerClient();
 
     const { data: comment, error: fetchError } = await supabase
       .from("comments")
-      .select("password_hash")
+      .select("user_id")
       .eq("id", id)
       .single();
 
@@ -26,9 +26,12 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "댓글을 찾을 수 없습니다." }, { status: 404 });
     }
 
-    const matches = await bcrypt.compare(String(password), comment.password_hash);
-    if (!matches) {
-      return NextResponse.json({ error: "비밀번호가 일치하지 않습니다." }, { status: 403 });
+    const isOwner = comment.user_id === user.id;
+    if (!isOwner && !(await isAdminUser(user.id))) {
+      return NextResponse.json(
+        { error: "본인이 작성한 댓글만 삭제할 수 있어요." },
+        { status: 403 }
+      );
     }
 
     const { error: deleteError } = await supabase.from("comments").delete().eq("id", id);

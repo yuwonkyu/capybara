@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import AuthButton from "@/components/AuthButton";
 import { BOARD_TYPES } from "@/lib/types";
 import { EXTERNAL_LINKS } from "@/lib/links";
 
@@ -24,21 +25,24 @@ const Header = (): JSX.Element => {
           <p className="font-body text-xs text-ink/60">Maple Planet Guild Home</p>
         </Link>
 
-        <nav className="flex flex-wrap gap-1.5">
-          {NAV_LINKS.map((link) => {
-            const isActive =
-              link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`nav-link ${isActive ? "nav-link-active" : ""}`}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
-        </nav>
+        <div className="flex flex-col gap-2 md:items-end">
+          <nav className="flex flex-wrap gap-1.5">
+            {NAV_LINKS.map((link) => {
+              const isActive =
+                link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`nav-link ${isActive ? "nav-link-active" : ""}`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+          </nav>
+          <AuthButton />
+        </div>
       </div>
 
       <div className="mt-3 flex flex-wrap gap-1.5 border-t border-sand/60 pt-3">

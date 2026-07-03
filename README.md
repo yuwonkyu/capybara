@@ -7,8 +7,7 @@
 - Next.js 15 (App Router, Route Handlers)
 - React 18 / TypeScript
 - Tailwind CSS 3
-- Supabase (Postgres) — 게시판 데이터 저장
-- bcryptjs — 게시글/댓글 비밀번호 해시
+- Supabase (Postgres + Auth) — 게시판 데이터 저장, 카카오 로그인
 
 ## 실행 방법
 
@@ -24,22 +23,55 @@ npm run dev
 게시판 글쓰기/조회는 Supabase DB가 있어야 동작합니다. 아래 순서로 설정해주세요.
 
 1. [supabase.com](https://supabase.com) 에서 무료 프로젝트를 생성합니다.
-2. 프로젝트의 **SQL Editor** 에서 [`supabase/schema.sql`](supabase/schema.sql) 내용을 그대로 실행해 `posts`, `comments` 테이블을 만듭니다.
-3. 프로젝트의 **Project Settings > API** 메뉴에서 `Project URL` 과 `service_role` 키를 확인합니다.
+2. 프로젝트의 **SQL Editor** 에서 [`supabase/schema.sql`](supabase/schema.sql) 내용을 그대로 실행해 `posts`, `comments`, `admins` 테이블을 만듭니다.
+   - 이미 옛 버전(비밀번호 방식) 스키마를 쓰고 있다면 대신 [`supabase/migration-001-kakao-auth.sql`](supabase/migration-001-kakao-auth.sql) 을 실행합니다.
+3. 프로젝트의 **Project Settings > API** 메뉴에서 `Project URL`, `anon(public)` 키, `service_role` 키를 확인합니다.
 4. 루트에 `.env.local` 파일을 만들고 [`.env.example`](.env.example) 을 참고해 값을 채웁니다.
    ```
    SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
    SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+   NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
    ```
-5. 개발 서버를 재시작하면 게시판이 정상 동작합니다.
+5. 개발 서버를 재시작하면 게시판이 정상 동작합니다. Vercel에 배포한 경우 Vercel 프로젝트의 **Settings > Environment Variables** 에도 같은 4개 값을 넣고 재배포해야 합니다.
 
 `SUPABASE_SERVICE_ROLE_KEY` 는 서버(Route Handler)에서만 사용되며 클라이언트에 노출되지 않습니다. `.env.local` 은 `.gitignore`에 포함되어 있어 커밋되지 않습니다.
 
+## 카카오 로그인 설정 (필수)
+
+글/댓글 작성은 카카오 로그인이 필요합니다. Supabase Auth의 카카오 프로바이더를 사용합니다.
+
+1. [developers.kakao.com](https://developers.kakao.com) 에 로그인하고 **내 애플리케이션 > 애플리케이션 추가하기** 로 앱을 만듭니다.
+2. **앱 설정 > 앱 키** 에서 `REST API 키` 를 복사해둡니다.
+3. **제품 설정 > 카카오 로그인** 을 활성화(ON)하고, **Redirect URI** 에 아래 주소를 등록합니다.
+   ```
+   https://<Supabase프로젝트ID>.supabase.co/auth/v1/callback
+   ```
+   (Supabase 대시보드 > Authentication > Providers > Kakao 화면에 나오는 Callback URL을 그대로 복사하면 됩니다.)
+4. **제품 설정 > 카카오 로그인 > 동의항목** 에서 `닉네임` 을 필수 동의로 설정합니다. (프로필 사진은 선택)
+5. **제품 설정 > 카카오 로그인 > 보안** 에서 `Client Secret` 을 생성하고 활성화합니다.
+6. Supabase 대시보드 > **Authentication > Providers > Kakao** 를 켜고, 카카오의 `REST API 키` 와 `Client Secret` 을 입력해 저장합니다.
+7. Supabase 대시보드 > **Authentication > URL Configuration** 에서
+   - `Site URL` 을 배포 주소(예: `https://capyguild.vercel.app`)로 설정하고,
+   - `Redirect URLs` 에 `http://localhost:3000/**` 와 배포 주소(`https://capyguild.vercel.app/**`)를 추가합니다.
+
+### 관리자(공지/업데이트 작성 권한) 등록
+
+공지사항·업데이트 게시판은 `admins` 테이블에 등록된 계정만 글을 쓸 수 있습니다.
+
+1. 홈페이지에서 카카오 로그인을 1회 진행합니다.
+2. Supabase 대시보드 > **Authentication > Users** 에서 본인 계정의 `UID` 를 복사합니다.
+3. **SQL Editor** 에서 실행합니다:
+   ```sql
+   insert into admins (user_id, note) values ('<복사한 UID>', '길드장');
+   ```
+
 ## 게시판 이용 방식
 
-- 로그인 시스템 없이 **닉네임 + 비밀번호(4자 이상)** 로 글/댓글을 작성합니다.
-- 글/댓글 수정·삭제 시 작성할 때 입력한 비밀번호를 다시 입력해야 합니다.
-- 비밀번호는 bcrypt로 해시되어 저장되며, 평문으로는 저장되지 않습니다.
+- **카카오 로그인** 후 글/댓글을 작성하며, 카카오 프로필 닉네임이 작성자명으로 표시됩니다.
+- 글 수정은 본인만, 글/댓글 삭제는 본인 또는 관리자만 할 수 있습니다.
+- 공지사항·업데이트 게시판 글쓰기는 관리자 전용입니다.
+- 카카오 로그인 도입 전(닉네임+비밀번호 방식)에 작성된 글은 그대로 보이지만, 관리자만 삭제할 수 있습니다.
 
 ## 카카오톡 오픈채팅 연동 관련 안내
 

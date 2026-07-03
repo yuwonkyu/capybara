@@ -1,7 +1,8 @@
-import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
+import { isAdminUser } from "@/lib/admin";
 import { getSupabaseServerClient } from "@/lib/supabase";
-import { BOARD_TYPES, BoardType } from "@/lib/types";
+import { getAuthUser, getDisplayName } from "@/lib/supabase-server";
+import { ADMIN_ONLY_BOARDS, BOARD_TYPES, BoardType } from "@/lib/types";
 
 const VALID_TYPES = BOARD_TYPES.map((board) => board.type);
 
@@ -36,41 +37,43 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { board_type, title, content, nickname, password } = body ?? {};
+  const { board_type, title, content } = body ?? {};
 
-  if (
-    !board_type ||
-    !VALID_TYPES.includes(board_type) ||
-    !title?.trim() ||
-    !content?.trim() ||
-    !nickname?.trim() ||
-    !password
-  ) {
+  if (!board_type || !VALID_TYPES.includes(board_type) || !title?.trim() || !content?.trim()) {
     return NextResponse.json(
-      { error: "제목, 내용, 닉네임, 비밀번호를 모두 입력해주세요." },
-      { status: 400 }
-    );
-  }
-
-  if (String(password).length < 4) {
-    return NextResponse.json(
-      { error: "비밀번호는 4자 이상 입력해주세요." },
+      { error: "제목과 내용을 모두 입력해주세요." },
       { status: 400 }
     );
   }
 
   try {
-    const supabase = getSupabaseServerClient();
-    const passwordHash = await bcrypt.hash(String(password), 10);
+    const user = await getAuthUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: "카카오 로그인 후 글을 쓸 수 있어요." },
+        { status: 401 }
+      );
+    }
 
+    if (ADMIN_ONLY_BOARDS.includes(board_type)) {
+      const isAdmin = await isAdminUser(user.id);
+      if (!isAdmin) {
+        return NextResponse.json(
+          { error: "이 게시판은 관리자만 글을 쓸 수 있어요." },
+          { status: 403 }
+        );
+      }
+    }
+
+    const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from("posts")
       .insert({
         board_type,
         title: title.trim(),
         content: content.trim(),
-        nickname: nickname.trim(),
-        password_hash: passwordHash,
+        nickname: getDisplayName(user),
+        user_id: user.id,
       })
       .select("id")
       .single();

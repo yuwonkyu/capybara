@@ -1,5 +1,6 @@
--- 카피 길드 홈페이지 게시판 스키마
--- Supabase 프로젝트의 SQL Editor에서 실행하세요.
+-- 카피 길드 홈페이지 게시판 스키마 (카카오 로그인 기반)
+-- 새 Supabase 프로젝트의 SQL Editor에서 실행하세요.
+-- 기존에 옛 스키마(비밀번호 방식)를 쓰고 있다면 migration-001-kakao-auth.sql을 실행하세요.
 
 create extension if not exists "pgcrypto";
 
@@ -9,7 +10,8 @@ create table if not exists posts (
   title text not null,
   content text not null,
   nickname text not null,
-  password_hash text not null,
+  user_id uuid references auth.users (id) on delete set null,
+  password_hash text,
   views integer not null default 0,
   created_at timestamptz not null default now()
 );
@@ -22,15 +24,30 @@ create table if not exists comments (
   post_id uuid not null references posts (id) on delete cascade,
   nickname text not null,
   content text not null,
-  password_hash text not null,
+  user_id uuid references auth.users (id) on delete set null,
+  password_hash text,
   created_at timestamptz not null default now()
 );
 
 create index if not exists comments_post_id_created_at_idx
   on comments (post_id, created_at asc);
 
+-- 공지사항/업데이트 게시판 작성 권한용 관리자 목록
+create table if not exists admins (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  note text,
+  created_at timestamptz not null default now()
+);
+
 -- 이 프로젝트의 모든 읽기/쓰기는 서버(Route Handler)가
 -- SUPABASE_SERVICE_ROLE_KEY로 처리하므로 RLS를 켜서
 -- 클라이언트(anon key)의 직접 접근은 막아둡니다.
 alter table posts enable row level security;
 alter table comments enable row level security;
+alter table admins enable row level security;
+
+-- 관리자 등록 방법:
+-- 1. 홈페이지에서 카카오 로그인을 1회 진행합니다.
+-- 2. Supabase 대시보드 > Authentication > Users 에서 본인 계정의 UUID를 복사합니다.
+-- 3. 아래 쿼리의 <UUID> 를 바꿔 실행합니다.
+-- insert into admins (user_id, note) values ('<UUID>', '길드장');
