@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>카피 길드 | 메이플 플래닛</title>
+  <meta name="description" content="메이플스토리 월드 메이플 플래닛 카피 길드 전용 미니 홈페이지" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Gowun+Dodum&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="sky-glow"></div>
+  <header class="topbar">
+    <div class="logo-wrap">
+      <p class="logo">CAPI</p>
+      <p class="sub">Maple Planet Guild</p>
+    </div>
+    <button class="btn ghost" id="copyInvite">길드 문의 복사</button>
+  </header>
+
+  <main>
+    <section class="hero card reveal">
+      <p class="chip">길드 전용</p>
+      <h1>메이플 플래닛<br />카피 길드</h1>
+      <p class="hero-desc">같이 뛰고, 같이 웃고, 같이 성장하는 우리만의 아지트.</p>
+      <div class="hero-actions">
+        <a class="btn" href="#notice">공지 보기</a>
+        <a class="btn ghost" href="#join">가입 안내</a>
+      </div>
+    </section>
+
+    <section class="grid">
+      <article class="card reveal" id="notice">
+        <h2>오늘의 공지</h2>
+        <ul class="list">
+          <li>주간 길드 미션: 별빛 채집 120회</li>
+          <li>토요일 9시 길드 레이드 모임</li>
+          <li>신입 길원 환영 이벤트 진행 중</li>
+        </ul>
+      </article>
+
+      <article class="card reveal">
+        <h2>이번 주 일정</h2>
+        <ul class="timeline">
+          <li><span>수</span><p>자유 파티 사냥 (20:30)</p></li>
+          <li><span>금</span><p>보스 트라이 (21:00)</p></li>
+          <li><span>토</span><p>길드 레이드 (21:00)</p></li>
+        </ul>
+      </article>
+
+      <article class="card reveal">
+        <h2>길드 규칙</h2>
+        <ol class="list ordered">
+          <li>매너 채팅은 기본, 비방/분쟁 금지</li>
+          <li>미접속 14일 이상은 운영진 문의</li>
+          <li>레이드 참여 시 시간 약속 준수</li>
+        </ol>
+      </article>
+
+      <article class="card reveal" id="join">
+        <h2>가입 안내</h2>
+        <p class="join">접속 시간대와 플레이 성향만 맞으면 누구나 환영합니다. 아래 문의 태그를 복사해 DM 주세요.</p>
+        <p class="tag" id="inviteTag">CAPI_GUILD#PLANET</p>
+      </article>
+    </section>
+  </main>
+
+  <footer class="foot reveal">
+    <p>© 2026 CAPI GUILD. Maple Planet Community Page.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

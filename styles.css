@@ -1,0 +1,256 @@
+:root {
+  --bg-start: #06213b;
+  --bg-end: #0f3f2f;
+  --card: rgba(255, 252, 240, 0.1);
+  --card-border: rgba(255, 246, 214, 0.25);
+  --text: #fff9e8;
+  --muted: #ffe8b6;
+  --point: #ffd166;
+  --point-dark: #d89f2a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Gowun Dodum", sans-serif;
+  color: var(--text);
+  background: radial-gradient(circle at 15% 20%, #1a4f7b 0%, transparent 42%),
+    radial-gradient(circle at 80% 10%, #2d8a64 0%, transparent 38%),
+    linear-gradient(120deg, var(--bg-start), var(--bg-end));
+  overflow-x: hidden;
+}
+
+.sky-glow {
+  position: fixed;
+  inset: -15vmax;
+  background: conic-gradient(from 120deg at 50% 50%, rgba(255, 225, 130, 0.15), rgba(67, 196, 140, 0.14), rgba(80, 160, 255, 0.14), rgba(255, 225, 130, 0.15));
+  filter: blur(48px);
+  z-index: -2;
+  animation: drift 16s linear infinite;
+}
+
+.topbar,
+main,
+.foot {
+  width: min(980px, 92vw);
+  margin: 0 auto;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.2rem 0 0.6rem;
+}
+
+.logo-wrap {
+  line-height: 1.1;
+}
+
+.logo {
+  margin: 0;
+  font-family: "Black Han Sans", sans-serif;
+  letter-spacing: 0.08em;
+  font-size: 2rem;
+}
+
+.sub {
+  margin: 0.15rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+main {
+  padding: 0.4rem 0 2rem;
+}
+
+.hero {
+  margin-bottom: 1rem;
+}
+
+.hero h1 {
+  margin: 0.2rem 0 0.5rem;
+  font-family: "Black Han Sans", sans-serif;
+  font-size: clamp(2rem, 5.5vw, 3.3rem);
+  letter-spacing: 0.03em;
+}
+
+.hero-desc {
+  margin: 0;
+  color: var(--muted);
+}
+
+.hero-actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 1rem;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.2);
+}
+
+.card h2 {
+  margin-top: 0;
+  margin-bottom: 0.65rem;
+  font-size: 1.15rem;
+}
+
+.chip {
+  display: inline-block;
+  margin: 0;
+  padding: 0.2rem 0.58rem;
+  border-radius: 999px;
+  background: rgba(255, 209, 102, 0.2);
+  border: 1px solid rgba(255, 209, 102, 0.4);
+  font-size: 0.82rem;
+}
+
+.list {
+  margin: 0;
+  padding-left: 1.1rem;
+  line-height: 1.55;
+}
+
+.timeline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timeline li {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.42rem 0;
+}
+
+.timeline span {
+  text-align: center;
+  font-weight: 700;
+  color: #072739;
+  background: var(--point);
+  border-radius: 10px;
+  padding: 0.2rem 0;
+}
+
+.timeline p {
+  margin: 0;
+}
+
+.ordered {
+  padding-left: 1.2rem;
+}
+
+.join {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.tag {
+  margin: 0.9rem 0 0;
+  padding: 0.6rem 0.75rem;
+  display: inline-block;
+  border: 1px dashed rgba(255, 209, 102, 0.8);
+  border-radius: 10px;
+  font-family: "Black Han Sans", sans-serif;
+  letter-spacing: 0.04em;
+  background: rgba(7, 24, 38, 0.4);
+}
+
+.btn {
+  border: none;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.58rem 0.92rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--point), var(--point-dark));
+  color: #061728;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn.ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid rgba(255, 249, 232, 0.4);
+}
+
+.foot {
+  padding-bottom: 1.2rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: rise 0.7s ease forwards;
+}
+
+.reveal:nth-child(2) {
+  animation-delay: 0.07s;
+}
+
+.reveal:nth-child(3) {
+  animation-delay: 0.14s;
+}
+
+.reveal:nth-child(4) {
+  animation-delay: 0.21s;
+}
+
+.reveal:nth-child(5) {
+  animation-delay: 0.28s;
+}
+
+@keyframes rise {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes drift {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.08);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+@media (max-width: 760px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
