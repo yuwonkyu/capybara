@@ -1,7 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  ChangeEvent,
+  ClipboardEvent,
+  FormEvent,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { BoardConfig } from "@/lib/types";
 
 const MAX_IMAGES = 5;
@@ -42,20 +49,37 @@ const PostForm = ({
 
   const totalImages = imageUrls.length + files.length;
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const selected = Array.from(event.target.files ?? []);
+  const addFiles = (selected: File[]) => {
     if (selected.length === 0) return;
 
     const remaining = MAX_IMAGES - totalImages;
     if (remaining <= 0) {
       setError(`이미지는 최대 ${MAX_IMAGES}장까지 올릴 수 있어요.`);
-      event.target.value = "";
       return;
     }
 
     setError(null);
     setFiles((prev) => [...prev, ...selected.slice(0, remaining)]);
+  };
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    addFiles(Array.from(event.target.files ?? []));
     event.target.value = "";
+  };
+
+  const handleContentPaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = Array.from(event.clipboardData?.items ?? []);
+    const imageFiles = items
+      .filter((item) => item.kind === "file" && item.type.startsWith("image/"))
+      .map((item) => item.getAsFile())
+      .filter((file): file is File => file !== null);
+
+    if (imageFiles.length === 0) return;
+
+    // 이미지가 붙여넣기되면 텍스트로는 아무것도 들어가지 않으니 기본 동작을 막을 필요는 없지만,
+    // 혹시 모를 파일 경로 텍스트 삽입을 방지하기 위해 막아둔다.
+    event.preventDefault();
+    addFiles(imageFiles);
   };
 
   const removeExistingImage = (url: string) => {
@@ -143,7 +167,8 @@ const PostForm = ({
           className="field-input min-h-[220px] resize-y"
           value={content}
           onChange={(event) => setContent(event.target.value)}
-          placeholder="내용을 입력해주세요"
+          onPaste={handleContentPaste}
+          placeholder="내용을 입력해주세요 (이미지를 복사한 뒤 Ctrl+V로 바로 붙여넣을 수 있어요)"
           required
         />
       </div>
