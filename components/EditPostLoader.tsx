@@ -72,6 +72,7 @@ const EditPostLoader = ({
       postId={postId}
       initialTitle={post.title}
       initialContent={post.content}
+      initialImageUrls={post.image_urls ?? []}
     />
   );
 };

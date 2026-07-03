@@ -35,9 +35,16 @@ export async function GET(request: NextRequest) {
   }
 }
 
+const sanitizeImageUrls = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((url): url is string => typeof url === "string" && url.length < 1000)
+    .slice(0, 5);
+};
+
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { board_type, title, content } = body ?? {};
+  const { board_type, title, content, image_urls } = body ?? {};
 
   if (!board_type || !VALID_TYPES.includes(board_type) || !title?.trim() || !content?.trim()) {
     return NextResponse.json(
@@ -74,6 +81,7 @@ export async function POST(request: NextRequest) {
         content: content.trim(),
         nickname: getDisplayName(user),
         user_id: user.id,
+        image_urls: sanitizeImageUrls(image_urls),
       })
       .select("id")
       .single();

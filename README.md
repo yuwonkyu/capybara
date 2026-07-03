@@ -1,6 +1,6 @@
 # Capybara
 
-친절한 카피바라씨 길드 홈페이지입니다. Next.js App Router 기반으로 구성되어 있고, npm으로 패키지를 관리하며, Tailwind CSS로 스타일을 적용합니다. 공지사항 / 업데이트 / 자유게시판 / 보스 사냥 게시판을 제공합니다.
+친절한 카피바라씨 길드 홈페이지입니다. Next.js App Router 기반으로 구성되어 있고, npm으로 패키지를 관리하며, Tailwind CSS로 스타일을 적용합니다. 공지사항 / 업데이트 / 공략 / 사냥 / 나눔 게시판을 제공합니다.
 
 ## 기술 스택
 
@@ -23,8 +23,8 @@ npm run dev
 게시판 글쓰기/조회는 Supabase DB가 있어야 동작합니다. 아래 순서로 설정해주세요.
 
 1. [supabase.com](https://supabase.com) 에서 무료 프로젝트를 생성합니다.
-2. 프로젝트의 **SQL Editor** 에서 [`supabase/schema.sql`](supabase/schema.sql) 내용을 그대로 실행해 `posts`, `comments`, `admins` 테이블을 만듭니다.
-   - 이미 옛 버전(비밀번호 방식) 스키마를 쓰고 있다면 대신 [`supabase/migration-001-kakao-auth.sql`](supabase/migration-001-kakao-auth.sql) 을 실행합니다.
+2. 프로젝트의 **SQL Editor** 에서 [`supabase/schema.sql`](supabase/schema.sql) 내용을 그대로 실행해 `posts`, `comments`, `admins` 테이블과 이미지 버킷을 만듭니다.
+   - 이미 이전 버전 스키마를 쓰고 있다면 대신 마이그레이션 파일을 순서대로 실행합니다: [`migration-001-kakao-auth.sql`](supabase/migration-001-kakao-auth.sql)(비밀번호 방식에서 전환), [`migration-002-boards-images.sql`](supabase/migration-002-boards-images.sql)(게시판 개편 + 이미지 첨부).
 3. 프로젝트의 **Project Settings > API** 메뉴에서 `Project URL`, `anon(public)` 키, `service_role` 키를 확인합니다.
 4. 루트에 `.env.local` 파일을 만들고 [`.env.example`](.env.example) 을 참고해 값을 채웁니다.
    ```
@@ -71,7 +71,8 @@ npm run dev
 
 - **카카오 로그인** 후 글/댓글을 작성하며, 카카오 프로필 닉네임이 작성자명으로 표시됩니다.
 - 글 수정은 본인만, 글/댓글 삭제는 본인 또는 관리자만 할 수 있습니다.
-- 공지사항·업데이트 게시판 글쓰기는 관리자 전용입니다.
+- 공지사항·업데이트 게시판 글쓰기는 관리자 전용입니다. 공략·사냥·나눔 게시판은 로그인한 누구나 쓸 수 있습니다.
+- 게시글에 이미지를 최대 5장(장당 5MB, PNG/JPG/GIF/WEBP)까지 첨부할 수 있습니다. 이미지는 Supabase Storage의 `post-images` 공개 버킷에 저장됩니다.
 - 카카오 로그인 도입 전(닉네임+비밀번호 방식)에 작성된 글은 그대로 보이지만, 관리자만 삭제할 수 있습니다.
 
 ## 카카오톡 오픈채팅 연동 관련 안내
