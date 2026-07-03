@@ -179,10 +179,14 @@ const ProfileForm = (): JSX.Element => {
           className="field-input max-w-xs"
           value={nickname}
           onChange={(event) => setNickname(event.target.value)}
-          placeholder="닉네임을 입력해주세요"
+          placeholder="게임 캐릭터 닉네임을 입력해주세요"
           maxLength={NICKNAME_MAX}
           required
         />
+        <p className="font-body mt-1 text-xs text-mintdeep">
+          💡 길드원들이 알아볼 수 있게 <b>메이플 플래닛 캐릭터 닉네임</b>으로
+          설정하는 것을 권장해요!
+        </p>
         <p className="font-body mt-1 text-xs text-ink/40">
           2~{NICKNAME_MAX}자 · 게시글과 댓글의 작성자명으로 표시됩니다. (이미 쓴 글의
           닉네임은 바뀌지 않아요)

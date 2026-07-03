@@ -2,8 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 import LatestPosts from "@/components/LatestPosts";
 import { getVisibleLinks } from "@/lib/links";
+import { fetchBoardPosts } from "@/lib/posts";
 import { getAuthUser } from "@/lib/supabase-server";
 import { BOARD_TYPES } from "@/lib/types";
+
+export const dynamic = "force-dynamic";
 
 const highlights = [
   "방송인 친절한 카피바라씨의 길드",
@@ -12,7 +15,11 @@ const highlights = [
 ];
 
 const Home = async (): Promise<JSX.Element> => {
-  const user = await getAuthUser();
+  const [user, notices, updates] = await Promise.all([
+    getAuthUser(),
+    fetchBoardPosts("notice", 5),
+    fetchBoardPosts("update", 5),
+  ]);
   const shortcutLinks = getVisibleLinks(Boolean(user));
 
   return (
@@ -77,8 +84,8 @@ const Home = async (): Promise<JSX.Element> => {
       </section>
 
       <section className="mb-5 grid gap-4 md:grid-cols-2">
-        <LatestPosts board="notice" title="최근 공지" />
-        <LatestPosts board="update" title="최근 업데이트" />
+        <LatestPosts board="notice" title="최근 공지" posts={notices} />
+        <LatestPosts board="update" title="최근 업데이트" posts={updates} />
       </section>
 
       <section className="cute-card">
