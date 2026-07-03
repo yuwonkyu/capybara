@@ -56,6 +56,8 @@ const AuthButton = (): JSX.Element | null => {
       provider: "kakao",
       options: {
         redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(pathname)}`,
+        // 카카오 앱에 설정된 동의항목(닉네임)만 요청한다 — 이메일/프로필사진을 요청하면 KOE205 발생
+        scopes: "profile_nickname",
       },
     });
   };
