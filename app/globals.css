@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-gradient-to-b from-[#e5f8ff] via-[#fff6ea] to-[#ffe7f0] text-slate-900;
+}
+
+.blob-left {
+  position: absolute;
+  left: -120px;
+  top: -80px;
+  width: 300px;
+  height: 300px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 30% 30%, #ffd3b6, #ff9eb0);
+  opacity: 0.35;
+}
+
+.blob-right {
+  position: absolute;
+  right: -120px;
+  top: 120px;
+  width: 320px;
+  height: 320px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 30% 30%, #cde9ff, #a8e6cf);
+  opacity: 0.4;
+}
+
+.sprinkle {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(#ffffffaa 1px, transparent 1px);
+  background-size: 20px 20px;
+  opacity: 0.6;
+}
+
+@layer components {
+  .cute-card {
+    @apply rounded-3xl border border-white/60 bg-white/70 p-5 shadow-candy backdrop-blur;
+  }
+
+  .title {
+    @apply mb-3 font-display text-2xl text-[#ff6282];
+  }
+
+  .list-item {
+    @apply rounded-xl bg-[#f4fbff] px-3 py-2;
+  }
+
+  .day-pill {
+    @apply rounded-xl bg-[#ffd3b6] py-1 text-center font-display text-[#7a3f4a];
+  }
+}
+
+@media (max-width: 640px) {
+  .blob-left,
+  .blob-right {
+    width: 220px;
+    height: 220px;
+  }
+}
