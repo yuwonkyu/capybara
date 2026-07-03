@@ -1,0 +1,51 @@
+export type BoardType = "notice" | "update" | "free" | "boss";
+
+export type BoardConfig = {
+  type: BoardType;
+  label: string;
+  description: string;
+};
+
+export const BOARD_TYPES: BoardConfig[] = [
+  {
+    type: "notice",
+    label: "공지사항",
+    description: "길드 운영진이 전달하는 공지를 확인하세요.",
+  },
+  {
+    type: "update",
+    label: "업데이트",
+    description: "길드 소식과 변경 사항을 기록합니다.",
+  },
+  {
+    type: "free",
+    label: "자유게시판",
+    description: "길드원들의 자유로운 이야기 공간이에요.",
+  },
+  {
+    type: "boss",
+    label: "보스 사냥",
+    description: "보스 파티 모집, 컷 인증, 공략 공유는 여기에!",
+  },
+];
+
+export const getBoardConfig = (type: string): BoardConfig | undefined =>
+  BOARD_TYPES.find((board) => board.type === type);
+
+export type Post = {
+  id: string;
+  board_type: BoardType;
+  title: string;
+  content: string;
+  nickname: string;
+  views: number;
+  created_at: string;
+};
+
+export type Comment = {
+  id: string;
+  post_id: string;
+  nickname: string;
+  content: string;
+  created_at: string;
+};
