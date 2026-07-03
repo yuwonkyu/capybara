@@ -73,9 +73,9 @@ const AuthButton = (): JSX.Element | null => {
       <button
         type="button"
         onClick={handleLogin}
-        className="font-body inline-flex items-center gap-1.5 rounded-full bg-[#FEE500] px-4 py-2 text-sm font-semibold text-[#191919] transition hover:-translate-y-0.5"
+        className="font-body inline-flex items-center gap-1.5 rounded-full border border-sand bg-white px-3 py-1.5 text-xs text-ink/70 transition hover:bg-cream"
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
           <path d="M12 3C6.48 3 2 6.54 2 10.9c0 2.8 1.86 5.26 4.66 6.66-.15.52-.97 3.36-1 3.58 0 0-.02.17.09.24.11.07.24.02.24.02.32-.05 3.66-2.4 4.24-2.81.58.08 1.17.13 1.77.13 5.52 0 10-3.54 10-7.82S17.52 3 12 3z" />
         </svg>
         카카오 로그인
