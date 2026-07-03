@@ -7,9 +7,14 @@ import { BoardConfig, Post } from "@/lib/types";
 type EditPostLoaderProps = {
   board: BoardConfig;
   postId: string;
+  currentUserId: string;
 };
 
-const EditPostLoader = ({ board, postId }: EditPostLoaderProps): JSX.Element => {
+const EditPostLoader = ({
+  board,
+  postId,
+  currentUserId,
+}: EditPostLoaderProps): JSX.Element => {
   const [post, setPost] = useState<Post | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,6 +52,15 @@ const EditPostLoader = ({ board, postId }: EditPostLoaderProps): JSX.Element => 
     return (
       <section className="cute-card">
         <p className="font-body p-6 text-center text-sm text-ink/50">불러오는 중...</p>
+      </section>
+    );
+  }
+
+  if (post.user_id !== currentUserId) {
+    return (
+      <section className="cute-card">
+        <h1 className="title">{board.label} · 글 수정</h1>
+        <p className="font-body text-ink/70">본인이 작성한 글만 수정할 수 있어요.</p>
       </section>
     );
   }

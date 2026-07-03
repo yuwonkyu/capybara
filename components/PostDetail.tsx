@@ -9,17 +9,22 @@ import { BoardConfig, Comment, Post } from "@/lib/types";
 type PostDetailProps = {
   board: BoardConfig;
   postId: string;
+  currentUserId: string | null;
+  isAdmin: boolean;
 };
 
-const PostDetail = ({ board, postId }: PostDetailProps): JSX.Element => {
+const PostDetail = ({
+  board,
+  postId,
+  currentUserId,
+  isAdmin,
+}: PostDetailProps): JSX.Element => {
   const router = useRouter();
   const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const [commentNickname, setCommentNickname] = useState("");
-  const [commentPassword, setCommentPassword] = useState("");
   const [commentContent, setCommentContent] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
 
@@ -54,16 +59,11 @@ const PostDetail = ({ board, postId }: PostDetailProps): JSX.Element => {
   }, [postId]);
 
   const handleDeletePost = async () => {
-    const password = window.prompt("게시글을 삭제하려면 비밀번호를 입력해주세요.");
-    if (!password) return;
+    if (!window.confirm("게시글을 삭제할까요?")) return;
 
     setActionError(null);
     try {
-      const res = await fetch(`/api/posts/${postId}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
+      const res = await fetch(`/api/posts/${postId}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "삭제에 실패했습니다.");
       router.push(`/board/${board.type}`);
@@ -74,16 +74,11 @@ const PostDetail = ({ board, postId }: PostDetailProps): JSX.Element => {
   };
 
   const handleDeleteComment = async (commentId: string) => {
-    const password = window.prompt("댓글을 삭제하려면 비밀번호를 입력해주세요.");
-    if (!password) return;
+    if (!window.confirm("댓글을 삭제할까요?")) return;
 
     setActionError(null);
     try {
-      const res = await fetch(`/api/comments/${commentId}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
+      const res = await fetch(`/api/comments/${commentId}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "댓글 삭제에 실패했습니다.");
       await loadComments();
@@ -101,16 +96,10 @@ const PostDetail = ({ board, postId }: PostDetailProps): JSX.Element => {
       const res = await fetch(`/api/posts/${postId}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nickname: commentNickname,
-          password: commentPassword,
-          content: commentContent,
-        }),
+        body: JSON.stringify({ content: commentContent }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "댓글 작성에 실패했습니다.");
-      setCommentNickname("");
-      setCommentPassword("");
       setCommentContent("");
       await loadComments();
     } catch (err) {
@@ -139,6 +128,8 @@ const PostDetail = ({ board, postId }: PostDetailProps): JSX.Element => {
     );
   }
 
+  const isOwner = Boolean(currentUserId && post.user_id === currentUserId);
+
   return (
     <div className="space-y-4">
       <section className="cute-card">
@@ -157,12 +148,16 @@ const PostDetail = ({ board, postId }: PostDetailProps): JSX.Element => {
           <Link href={`/board/${board.type}`} className="btn-secondary">
             목록으로
           </Link>
-          <Link href={`/board/${board.type}/${postId}/edit`} className="btn-secondary">
-            수정
-          </Link>
-          <button type="button" onClick={handleDeletePost} className="btn-secondary">
-            삭제
-          </button>
+          {isOwner && (
+            <Link href={`/board/${board.type}/${postId}/edit`} className="btn-secondary">
+              수정
+            </Link>
+          )}
+          {(isOwner || isAdmin) && (
+            <button type="button" onClick={handleDeletePost} className="btn-secondary">
+              삭제
+            </button>
+          )}
         </div>
       </section>
 
@@ -173,60 +168,54 @@ const PostDetail = ({ board, postId }: PostDetailProps): JSX.Element => {
           {comments.length === 0 && (
             <p className="font-body text-sm text-ink/50">아직 댓글이 없어요.</p>
           )}
-          {comments.map((comment) => (
-            <div key={comment.id} className="list-item">
-              <div className="flex items-center justify-between gap-2">
-                <div className="font-body text-sm font-semibold text-ink">
-                  {comment.nickname}
-                  <span className="ml-2 text-xs font-normal text-ink/40">
-                    {formatDate(comment.created_at)}
-                  </span>
+          {comments.map((comment) => {
+            const canDelete =
+              isAdmin || Boolean(currentUserId && comment.user_id === currentUserId);
+            return (
+              <div key={comment.id} className="list-item">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="font-body text-sm font-semibold text-ink">
+                    {comment.nickname}
+                    <span className="ml-2 text-xs font-normal text-ink/40">
+                      {formatDate(comment.created_at)}
+                    </span>
+                  </div>
+                  {canDelete && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteComment(comment.id)}
+                      className="font-body text-xs text-ink/40 hover:text-red-500"
+                    >
+                      삭제
+                    </button>
+                  )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleDeleteComment(comment.id)}
-                  className="font-body text-xs text-ink/40 hover:text-red-500"
-                >
-                  삭제
-                </button>
+                <p className="font-body mt-1 whitespace-pre-wrap text-sm text-ink/80">
+                  {comment.content}
+                </p>
               </div>
-              <p className="font-body mt-1 whitespace-pre-wrap text-sm text-ink/80">
-                {comment.content}
-              </p>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        <form onSubmit={handleCommentSubmit} className="space-y-2 border-t border-sand/60 pt-4">
-          <div className="grid gap-2 sm:grid-cols-2">
-            <input
-              className="field-input"
-              placeholder="닉네임"
-              value={commentNickname}
-              onChange={(event) => setCommentNickname(event.target.value)}
+        {currentUserId ? (
+          <form onSubmit={handleCommentSubmit} className="space-y-2 border-t border-sand/60 pt-4">
+            <textarea
+              className="field-input min-h-[80px] resize-y"
+              placeholder="댓글을 입력해주세요"
+              value={commentContent}
+              onChange={(event) => setCommentContent(event.target.value)}
               required
             />
-            <input
-              type="password"
-              className="field-input"
-              placeholder="비밀번호 (4자 이상)"
-              value={commentPassword}
-              onChange={(event) => setCommentPassword(event.target.value)}
-              minLength={4}
-              required
-            />
-          </div>
-          <textarea
-            className="field-input min-h-[80px] resize-y"
-            placeholder="댓글을 입력해주세요"
-            value={commentContent}
-            onChange={(event) => setCommentContent(event.target.value)}
-            required
-          />
-          <button type="submit" className="btn-primary" disabled={submittingComment}>
-            {submittingComment ? "등록 중..." : "댓글 등록"}
-          </button>
-        </form>
+            <button type="submit" className="btn-primary" disabled={submittingComment}>
+              {submittingComment ? "등록 중..." : "댓글 등록"}
+            </button>
+          </form>
+        ) : (
+          <p className="font-body border-t border-sand/60 pt-4 text-sm text-ink/60">
+            카카오 로그인 후 댓글을 쓸 수 있어요. 상단의 <b>카카오 로그인</b> 버튼을 눌러주세요.
+          </p>
+        )}
       </section>
     </div>
   );

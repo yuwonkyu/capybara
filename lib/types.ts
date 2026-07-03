@@ -32,12 +32,15 @@ export const BOARD_TYPES: BoardConfig[] = [
 export const getBoardConfig = (type: string): BoardConfig | undefined =>
   BOARD_TYPES.find((board) => board.type === type);
 
+export const ADMIN_ONLY_BOARDS: BoardType[] = ["notice", "update"];
+
 export type Post = {
   id: string;
   board_type: BoardType;
   title: string;
   content: string;
   nickname: string;
+  user_id: string | null;
   views: number;
   created_at: string;
 };
@@ -47,5 +50,6 @@ export type Comment = {
   post_id: string;
   nickname: string;
   content: string;
+  user_id: string | null;
   created_at: string;
 };
