@@ -142,6 +142,21 @@ const PostDetail = ({
         </div>
         <p className="font-body mt-5 whitespace-pre-wrap leading-7 text-ink/90">{post.content}</p>
 
+        {post.image_urls && post.image_urls.length > 0 && (
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            {post.image_urls.map((url) => (
+              <a key={url} href={url} target="_blank" rel="noopener noreferrer">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={url}
+                  alt="게시글 첨부 이미지"
+                  className="w-full rounded-2xl border border-sand object-cover"
+                />
+              </a>
+            ))}
+          </div>
+        )}
+
         {actionError && <p className="font-body mt-3 text-sm text-red-500">{actionError}</p>}
 
         <div className="mt-5 flex flex-wrap gap-2">

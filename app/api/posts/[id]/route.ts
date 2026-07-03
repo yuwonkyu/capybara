@@ -13,7 +13,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 
     const { data: post, error: fetchError } = await supabase
       .from("posts")
-      .select("id, board_type, title, content, nickname, user_id, views, created_at")
+      .select("id, board_type, title, content, nickname, user_id, image_urls, views, created_at")
       .eq("id", id)
       .single();
 
@@ -25,7 +25,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
       .from("posts")
       .update({ views: post.views + 1 })
       .eq("id", id)
-      .select("id, board_type, title, content, nickname, user_id, views, created_at")
+      .select("id, board_type, title, content, nickname, user_id, image_urls, views, created_at")
       .single();
 
     return NextResponse.json({ post: updated ?? post });
@@ -37,10 +37,17 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
   }
 }
 
+const sanitizeImageUrls = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((url): url is string => typeof url === "string" && url.length < 1000)
+    .slice(0, 5);
+};
+
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   const { id } = await params;
   const body = await request.json();
-  const { title, content } = body ?? {};
+  const { title, content, image_urls } = body ?? {};
 
   if (!title?.trim() || !content?.trim()) {
     return NextResponse.json(
@@ -76,7 +83,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     const { error: updateError } = await supabase
       .from("posts")
-      .update({ title: title.trim(), content: content.trim() })
+      .update({
+        title: title.trim(),
+        content: content.trim(),
+        image_urls: sanitizeImageUrls(image_urls),
+      })
       .eq("id", id);
 
     if (updateError) throw updateError;

@@ -1,4 +1,4 @@
-export type BoardType = "notice" | "update" | "free" | "boss";
+export type BoardType = "notice" | "update" | "guide" | "hunt" | "share";
 
 export type BoardConfig = {
   type: BoardType;
@@ -18,14 +18,19 @@ export const BOARD_TYPES: BoardConfig[] = [
     description: "길드 소식과 변경 사항을 기록합니다.",
   },
   {
-    type: "free",
-    label: "자유게시판",
-    description: "길드원들의 자유로운 이야기 공간이에요.",
+    type: "guide",
+    label: "공략",
+    description: "보스·사냥터 공략과 팁을 공유해요.",
   },
   {
-    type: "boss",
-    label: "보스 사냥",
-    description: "보스 파티 모집, 컷 인증, 공략 공유는 여기에!",
+    type: "hunt",
+    label: "사냥",
+    description: "사냥 파티, 보스 파티 모집은 여기에!",
+  },
+  {
+    type: "share",
+    label: "나눔",
+    description: "아이템 나눔과 교환 이야기 공간이에요.",
   },
 ];
 
@@ -41,6 +46,7 @@ export type Post = {
   content: string;
   nickname: string;
   user_id: string | null;
+  image_urls: string[] | null;
   views: number;
   created_at: string;
 };

@@ -42,9 +42,16 @@ const AuthButton = (): JSX.Element | null => {
     return () => subscription.unsubscribe();
   }, [supabase]);
 
-  if (!supabase || !ready) return null;
+  // 세션 확인 중에는 잠깐 숨겨서 로그인/로그아웃 버튼이 깜빡이지 않게 한다
+  if (supabase && !ready) return null;
 
   const handleLogin = async () => {
+    if (!supabase) {
+      window.alert(
+        "로그인 설정이 아직 완료되지 않았어요.\nNEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY 환경변수를 확인해주세요."
+      );
+      return;
+    }
     await supabase.auth.signInWithOAuth({
       provider: "kakao",
       options: {
@@ -54,6 +61,7 @@ const AuthButton = (): JSX.Element | null => {
   };
 
   const handleLogout = async () => {
+    if (!supabase) return;
     await supabase.auth.signOut();
     router.refresh();
   };

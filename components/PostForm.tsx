@@ -1,8 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { BoardConfig } from "@/lib/types";
+
+const MAX_IMAGES = 5;
 
 type PostFormProps = {
   board: BoardConfig;
@@ -10,6 +12,7 @@ type PostFormProps = {
   postId?: string;
   initialTitle?: string;
   initialContent?: string;
+  initialImageUrls?: string[];
 };
 
 const PostForm = ({
@@ -18,12 +21,63 @@ const PostForm = ({
   postId,
   initialTitle = "",
   initialContent = "",
+  initialImageUrls = [],
 }: PostFormProps): JSX.Element => {
   const router = useRouter();
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
+  const [imageUrls, setImageUrls] = useState<string[]>(initialImageUrls);
+  const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const previews = useMemo(
+    () => files.map((file) => URL.createObjectURL(file)),
+    [files]
+  );
+
+  useEffect(() => {
+    return () => previews.forEach((url) => URL.revokeObjectURL(url));
+  }, [previews]);
+
+  const totalImages = imageUrls.length + files.length;
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(event.target.files ?? []);
+    if (selected.length === 0) return;
+
+    const remaining = MAX_IMAGES - totalImages;
+    if (remaining <= 0) {
+      setError(`이미지는 최대 ${MAX_IMAGES}장까지 올릴 수 있어요.`);
+      event.target.value = "";
+      return;
+    }
+
+    setError(null);
+    setFiles((prev) => [...prev, ...selected.slice(0, remaining)]);
+    event.target.value = "";
+  };
+
+  const removeExistingImage = (url: string) => {
+    setImageUrls((prev) => prev.filter((item) => item !== url));
+  };
+
+  const removeNewFile = (index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadFiles = async (): Promise<string[]> => {
+    const urls: string[] = [];
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "이미지 업로드에 실패했습니다.");
+      urls.push(data.url);
+    }
+    return urls;
+  };
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -31,11 +85,19 @@ const PostForm = ({
     setSubmitting(true);
 
     try {
+      const uploadedUrls = await uploadFiles();
+      const allImageUrls = [...imageUrls, ...uploadedUrls];
+
       if (mode === "create") {
         const res = await fetch("/api/posts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ board_type: board.type, title, content }),
+          body: JSON.stringify({
+            board_type: board.type,
+            title,
+            content,
+            image_urls: allImageUrls,
+          }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "게시글을 작성하지 못했습니다.");
@@ -45,7 +107,7 @@ const PostForm = ({
         const res = await fetch(`/api/posts/${postId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title, content }),
+          body: JSON.stringify({ title, content, image_urls: allImageUrls }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "게시글을 수정하지 못했습니다.");
@@ -54,7 +116,6 @@ const PostForm = ({
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "요청에 실패했습니다.");
-    } finally {
       setSubmitting(false);
     }
   };
@@ -85,6 +146,63 @@ const PostForm = ({
           placeholder="내용을 입력해주세요"
           required
         />
+      </div>
+
+      <div>
+        <label className="font-body mb-1 block text-sm text-ink/70">
+          이미지 첨부 ({totalImages}/{MAX_IMAGES})
+        </label>
+        <input
+          type="file"
+          accept="image/png,image/jpeg,image/gif,image/webp"
+          multiple
+          onChange={handleFileChange}
+          className="font-body block w-full text-sm text-ink/70 file:mr-3 file:rounded-full file:border-0 file:bg-mint file:px-4 file:py-2 file:font-body file:text-sm file:font-semibold file:text-mintdeep hover:file:bg-mint/80"
+        />
+        <p className="font-body mt-1 text-xs text-ink/40">
+          PNG, JPG, GIF, WEBP · 장당 5MB 이하 · 최대 {MAX_IMAGES}장
+        </p>
+
+        {(imageUrls.length > 0 || files.length > 0) && (
+          <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
+            {imageUrls.map((url) => (
+              <div key={url} className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={url}
+                  alt="첨부 이미지"
+                  className="aspect-square w-full rounded-xl border border-sand object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeExistingImage(url)}
+                  className="absolute right-1 top-1 rounded-full bg-black/50 px-2 py-0.5 text-xs text-white hover:bg-black/70"
+                  aria-label="이미지 삭제"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            {files.map((file, index) => (
+              <div key={`${file.name}-${index}`} className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={previews[index]}
+                  alt="첨부 예정 이미지"
+                  className="aspect-square w-full rounded-xl border border-mintdeep/40 object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeNewFile(index)}
+                  className="absolute right-1 top-1 rounded-full bg-black/50 px-2 py-0.5 text-xs text-white hover:bg-black/70"
+                  aria-label="이미지 삭제"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {error && <p className="font-body text-sm text-red-500">{error}</p>}
