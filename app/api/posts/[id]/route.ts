@@ -9,6 +9,14 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
   const { id } = await params;
 
   try {
+    const user = await getAuthUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: "게시글 내용은 카카오 로그인 후 볼 수 있어요." },
+        { status: 401 }
+      );
+    }
+
     const supabase = getSupabaseServerClient();
 
     const { data: post, error: fetchError } = await supabase
