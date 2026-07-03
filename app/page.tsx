@@ -70,7 +70,7 @@ const Home = async (): Promise<JSX.Element> => {
         </div>
       </section>
 
-      <section className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <section className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
         {BOARD_TYPES.map((board) => (
           <Link
             key={board.type}
