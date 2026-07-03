@@ -6,7 +6,7 @@ create extension if not exists "pgcrypto";
 
 create table if not exists posts (
   id uuid primary key default gen_random_uuid(),
-  board_type text not null check (board_type in ('notice', 'update', 'guide', 'hunt', 'share')),
+  board_type text not null check (board_type in ('notice', 'update', 'free', 'guide', 'hunt', 'share')),
   title text not null,
   content text not null,
   nickname text not null,

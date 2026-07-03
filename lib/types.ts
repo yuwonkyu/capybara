@@ -1,4 +1,4 @@
-export type BoardType = "notice" | "update" | "guide" | "hunt" | "share";
+export type BoardType = "notice" | "update" | "free" | "guide" | "hunt" | "share";
 
 export type BoardConfig = {
   type: BoardType;
@@ -16,6 +16,11 @@ export const BOARD_TYPES: BoardConfig[] = [
     type: "update",
     label: "업데이트",
     description: "길드 소식과 변경 사항을 기록합니다.",
+  },
+  {
+    type: "free",
+    label: "자유게시판",
+    description: "길드원들의 자유로운 이야기 공간이에요.",
   },
   {
     type: "guide",
@@ -37,7 +42,7 @@ export const BOARD_TYPES: BoardConfig[] = [
 export const getBoardConfig = (type: string): BoardConfig | undefined =>
   BOARD_TYPES.find((board) => board.type === type);
 
-export const ADMIN_ONLY_BOARDS: BoardType[] = ["notice", "update"];
+export const ADMIN_ONLY_BOARDS: BoardType[] = ["notice"];
 
 export type Post = {
   id: string;
