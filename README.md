@@ -42,14 +42,15 @@ npm run dev
 글/댓글 작성은 카카오 로그인이 필요합니다. Supabase Auth의 카카오 프로바이더를 사용합니다.
 
 1. [developers.kakao.com](https://developers.kakao.com) 에 로그인하고 **내 애플리케이션 > 애플리케이션 추가하기** 로 앱을 만듭니다.
-2. **앱 설정 > 앱 키** 에서 `REST API 키` 를 복사해둡니다.
-3. **제품 설정 > 카카오 로그인** 을 활성화(ON)하고, **Redirect URI** 에 아래 주소를 등록합니다.
+2. **[앱] > [플랫폼 키]** 에서 `REST API 키` 를 복사해둡니다.
+3. **카카오 로그인** 을 활성화(ON)합니다.
+4. **[앱] > [플랫폼 키] > [REST API 키] > [리다이렉트 URI]** 에 아래 주소를 등록합니다. (개편된 콘솔 기준 — 카카오 로그인 메뉴에는 로그아웃 리다이렉트만 있습니다)
    ```
    https://<Supabase프로젝트ID>.supabase.co/auth/v1/callback
    ```
    (Supabase 대시보드 > Authentication > Providers > Kakao 화면에 나오는 Callback URL을 그대로 복사하면 됩니다.)
-4. **제품 설정 > 카카오 로그인 > 동의항목** 에서 `닉네임` 을 필수 동의로 설정합니다. (프로필 사진은 선택)
-5. **제품 설정 > 카카오 로그인 > 보안** 에서 `Client Secret` 을 생성하고 활성화합니다.
+5. **동의항목** 에서 `닉네임` 을 필수 동의로 설정합니다. 동의 목적에는 "게시판 글/댓글 작성자 닉네임 표시 및 사용자 식별" 정도로 적으면 됩니다. (프로필 사진은 선택)
+6. **카카오 로그인 > 보안** 에서 `Client Secret` 을 생성하고 활성화합니다.
 6. Supabase 대시보드 > **Authentication > Providers > Kakao** 를 켜고, 카카오의 `REST API 키` 와 `Client Secret` 을 입력해 저장합니다.
 7. Supabase 대시보드 > **Authentication > URL Configuration** 에서
    - `Site URL` 을 배포 주소(예: `https://capyguild.vercel.app`)로 설정하고,
