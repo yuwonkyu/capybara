@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminUser } from "@/lib/admin";
 import { getSupabaseServerClient } from "@/lib/supabase";
-import { getAuthUser, getDisplayName } from "@/lib/supabase-server";
+import { getAuthUser } from "@/lib/supabase-server";
+import { getDisplayName } from "@/lib/user";
 import { ADMIN_ONLY_BOARDS, BOARD_TYPES, BoardType } from "@/lib/types";
 
 const VALID_TYPES = BOARD_TYPES.map((board) => board.type);
