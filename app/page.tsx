@@ -1,5 +1,4 @@
 import Image from "next/image";
-import heroImage from "../hi.png";
 
 const notices = [
   "성장 중심 길드 운영",
@@ -82,7 +81,7 @@ const Home = (): JSX.Element => {
             <div className="absolute inset-0 translate-x-4 translate-y-4 rounded-[2rem] bg-[#ffbfd0]" />
             <div className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white p-4 shadow-[0_18px_60px_rgba(255,141,161,0.25)]">
               <Image
-                src={heroImage}
+                src="/images/hi.png"
                 alt="귀여운 카피바라 캐릭터"
                 className="h-auto w-full rounded-[1.5rem] object-cover"
                 priority
