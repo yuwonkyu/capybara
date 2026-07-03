@@ -2,68 +2,44 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { formatDate } from "@/lib/format";
 import { BoardConfig, Comment, Post } from "@/lib/types";
 
 type PostDetailProps = {
   board: BoardConfig;
-  postId: string;
+  post: Post;
+  initialComments: Comment[];
   currentUserId: string | null;
   isAdmin: boolean;
 };
 
 const PostDetail = ({
   board,
-  postId,
+  post,
+  initialComments,
   currentUserId,
   isAdmin,
 }: PostDetailProps): JSX.Element => {
   const router = useRouter();
-  const [post, setPost] = useState<Post | null>(null);
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [comments, setComments] = useState<Comment[]>(initialComments);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const [commentContent, setCommentContent] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
 
   const loadComments = async () => {
-    const res = await fetch(`/api/posts/${postId}/comments`, { cache: "no-store" });
+    const res = await fetch(`/api/posts/${post.id}/comments`, { cache: "no-store" });
     const data = await res.json();
     if (res.ok) setComments(data.comments);
   };
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const load = async () => {
-      try {
-        const res = await fetch(`/api/posts/${postId}`, { cache: "no-store" });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "게시글을 불러오지 못했습니다.");
-        if (!cancelled) setPost(data.post);
-        await loadComments();
-      } catch (err) {
-        if (!cancelled) {
-          setLoadError(err instanceof Error ? err.message : "게시글을 불러오지 못했습니다.");
-        }
-      }
-    };
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [postId]);
 
   const handleDeletePost = async () => {
     if (!window.confirm("게시글을 삭제할까요?")) return;
 
     setActionError(null);
     try {
-      const res = await fetch(`/api/posts/${postId}`, { method: "DELETE" });
+      const res = await fetch(`/api/posts/${post.id}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "삭제에 실패했습니다.");
       router.push(`/board/${board.type}`);
@@ -93,7 +69,7 @@ const PostDetail = ({
     setSubmittingComment(true);
 
     try {
-      const res = await fetch(`/api/posts/${postId}/comments`, {
+      const res = await fetch(`/api/posts/${post.id}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: commentContent }),
@@ -108,25 +84,6 @@ const PostDetail = ({
       setSubmittingComment(false);
     }
   };
-
-  if (loadError) {
-    return (
-      <section className="cute-card">
-        <p className="font-body text-sm text-red-500">{loadError}</p>
-        <Link href={`/board/${board.type}`} className="btn-secondary mt-4 inline-flex">
-          목록으로
-        </Link>
-      </section>
-    );
-  }
-
-  if (!post) {
-    return (
-      <section className="cute-card">
-        <p className="font-body p-6 text-center text-sm text-ink/50">불러오는 중...</p>
-      </section>
-    );
-  }
 
   const isOwner = Boolean(currentUserId && post.user_id === currentUserId);
 
@@ -164,7 +121,7 @@ const PostDetail = ({
             목록으로
           </Link>
           {isOwner && (
-            <Link href={`/board/${board.type}/${postId}/edit`} className="btn-secondary">
+            <Link href={`/board/${board.type}/${post.id}/edit`} className="btn-secondary">
               수정
             </Link>
           )}
