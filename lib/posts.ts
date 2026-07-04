@@ -5,12 +5,13 @@ export type PostSummary = {
   id: string;
   title: string;
   nickname: string;
+  category: string | null;
   views: number;
   created_at: string;
 };
 
 const POST_DETAIL_FIELDS =
-  "id, board_type, title, content, nickname, user_id, image_urls, views, created_at";
+  "id, board_type, title, content, nickname, user_id, image_urls, category, views, created_at";
 
 // 서버 컴포넌트에서 직접 호출하는 데이터 헬퍼.
 // API 라우트를 거치지 않아 클라이언트 왕복이 줄어든다.
@@ -23,7 +24,7 @@ export const fetchBoardPosts = async (
     const supabase = getSupabaseServerClient();
     let query = supabase
       .from("posts")
-      .select("id, title, nickname, views, created_at")
+      .select("id, title, nickname, category, views, created_at")
       .eq("board_type", boardType)
       .order("created_at", { ascending: false });
 
@@ -38,28 +39,19 @@ export const fetchBoardPosts = async (
   }
 };
 
-export const fetchPostWithViewIncrement = async (
-  id: string
-): Promise<Post | null> => {
+// 조회수를 올리지 않고 게시글만 가져온다.
+// (조회수 증가는 클라이언트가 /api/posts/[id]/view 를 호출해 쿠키로 중복 없이 처리)
+export const fetchPost = async (id: string): Promise<Post | null> => {
   try {
     const supabase = getSupabaseServerClient();
-
-    const { data: post, error } = await supabase
+    const { data, error } = await supabase
       .from("posts")
       .select(POST_DETAIL_FIELDS)
       .eq("id", id)
       .single();
 
-    if (error || !post) return null;
-
-    const { data: updated } = await supabase
-      .from("posts")
-      .update({ views: post.views + 1 })
-      .eq("id", id)
-      .select(POST_DETAIL_FIELDS)
-      .single();
-
-    return (updated ?? post) as Post;
+    if (error || !data) return null;
+    return data as Post;
   } catch {
     return null;
   }

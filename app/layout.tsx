@@ -15,9 +15,45 @@ const gowunDodum = Gowun_Dodum({
 });
 
 export const metadata: Metadata = {
-  title: "친절한 카피바라씨 길드 | 메이플 플래닛",
+  metadataBase: new URL("https://capyguild.vercel.app"),
+  title: {
+    default: "친절한 카피바라씨 길드 | 메이플 플래닛",
+    template: "%s | 친절한 카피바라씨 길드",
+  },
   description:
-    "방송인 친절한 카피바라씨의 메이플 플래닛 길드 홈페이지. 공지사항, 업데이트, 자유게시판, 보스 사냥 게시판을 운영합니다.",
+    "방송인 친절한 카피바라씨의 메이플 플래닛 길드 홈페이지. 공지사항, 업데이트, 자유게시판, 공략, 사냥, 거래 게시판을 운영하는 길드원 전용 커뮤니티입니다.",
+  keywords: [
+    "친절한 카피바라씨",
+    "카피바라 길드",
+    "메이플 플래닛",
+    "메이플랜드",
+    "길드 홈페이지",
+    "카피 길드",
+  ],
+  applicationName: "친절한 카피바라씨 길드",
+  openGraph: {
+    type: "website",
+    siteName: "친절한 카피바라씨 길드",
+    title: "친절한 카피바라씨 길드 | 메이플 플래닛",
+    description:
+      "방송인 친절한 카피바라씨의 메이플 플래닛 길드 홈페이지. 공지·공략·사냥·거래를 함께하는 길드 커뮤니티예요.",
+    locale: "ko_KR",
+    images: [
+      {
+        url: "/images/hi.png",
+        width: 480,
+        height: 480,
+        alt: "친절한 카피바라씨 길드 마스코트",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "친절한 카피바라씨 길드 | 메이플 플래닛",
+    description:
+      "방송인 친절한 카피바라씨의 메이플 플래닛 길드 홈페이지.",
+    images: ["/images/hi.png"],
+  },
 };
 
 type RootLayoutProps = {

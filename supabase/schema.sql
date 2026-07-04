@@ -13,6 +13,7 @@ create table if not exists posts (
   user_id uuid references auth.users (id) on delete set null,
   password_hash text,
   image_urls text[] not null default '{}',
+  category text,
   views integer not null default 0,
   created_at timestamptz not null default now()
 );
@@ -33,10 +34,18 @@ create table if not exists comments (
 create index if not exists comments_post_id_created_at_idx
   on comments (post_id, created_at asc);
 
--- 공지사항/업데이트 게시판 작성 권한용 관리자 목록
+-- 공지사항/업데이트 게시판 작성 권한용 관리자 목록 (레거시)
 create table if not exists admins (
   user_id uuid primary key references auth.users (id) on delete cascade,
   note text,
+  created_at timestamptz not null default now()
+);
+
+-- 회원 등급 (master/submaster/staff/member/sprout)
+create table if not exists members (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  role text not null default 'sprout'
+    check (role in ('master', 'submaster', 'staff', 'member', 'sprout')),
   created_at timestamptz not null default now()
 );
 
@@ -46,6 +55,7 @@ create table if not exists admins (
 alter table posts enable row level security;
 alter table comments enable row level security;
 alter table admins enable row level security;
+alter table members enable row level security;
 
 -- 이미지 저장용 공개 버킷 (읽기는 공개, 업로드는 서버에서만 수행)
 insert into storage.buckets (id, name, public)

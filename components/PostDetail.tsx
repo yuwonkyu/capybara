@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import PostContent from "@/components/PostContent";
 import { formatDate } from "@/lib/format";
 import { BoardConfig, Comment, Post } from "@/lib/types";
 
@@ -27,6 +28,11 @@ const PostDetail = ({
 
   const [commentContent, setCommentContent] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
+
+  // 조회수 증가 (같은 방문자 중복은 서버 쿠키로 방지)
+  useEffect(() => {
+    fetch(`/api/posts/${post.id}/view`, { method: "POST" }).catch(() => {});
+  }, [post.id]);
 
   const loadComments = async () => {
     const res = await fetch(`/api/posts/${post.id}/comments`, { cache: "no-store" });
@@ -90,29 +96,27 @@ const PostDetail = ({
   return (
     <div className="space-y-4">
       <section className="cute-card">
-        <p className="pill-badge mb-2">{board.label}</p>
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <span className="pill-badge">{board.label}</span>
+          {post.category && (
+            <span className="font-body rounded-full bg-sky/40 px-3 py-1 text-xs font-semibold text-skydeep">
+              {post.category}
+            </span>
+          )}
+        </div>
         <h1 className="font-display text-2xl text-ink">{post.title}</h1>
         <div className="font-body mt-2 flex flex-wrap gap-3 text-xs text-ink/50">
           <span>{post.nickname}</span>
           <span>{formatDate(post.created_at)}</span>
           <span>조회 {post.views}</span>
         </div>
-        <p className="font-body mt-5 whitespace-pre-wrap leading-7 text-ink/90">{post.content}</p>
 
-        {post.image_urls && post.image_urls.length > 0 && (
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            {post.image_urls.map((url) => (
-              <a key={url} href={url} target="_blank" rel="noopener noreferrer">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={url}
-                  alt="게시글 첨부 이미지"
-                  className="w-full rounded-2xl border border-sand object-cover"
-                />
-              </a>
-            ))}
-          </div>
-        )}
+        <PostContent
+          content={post.content}
+          extraImages={(post.image_urls ?? []).filter(
+            (url) => !post.content.includes(url)
+          )}
+        />
 
         {actionError && <p className="font-body mt-3 text-sm text-red-500">{actionError}</p>}
 

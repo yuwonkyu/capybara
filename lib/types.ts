@@ -34,8 +34,8 @@ export const BOARD_TYPES: BoardConfig[] = [
   },
   {
     type: "share",
-    label: "나눔",
-    description: "아이템 나눔과 교환 이야기 공간이에요.",
+    label: "거래",
+    description: "아이템 나눔·요청·판매를 위한 거래 공간이에요.",
   },
 ];
 
@@ -43,6 +43,44 @@ export const getBoardConfig = (type: string): BoardConfig | undefined =>
   BOARD_TYPES.find((board) => board.type === type);
 
 export const ADMIN_ONLY_BOARDS: BoardType[] = ["notice"];
+
+// 거래 게시판 말머리
+export const CATEGORY_BOARDS: BoardType[] = ["share"];
+export const SHARE_CATEGORIES = ["나눔", "요청", "판매"] as const;
+export type ShareCategory = (typeof SHARE_CATEGORIES)[number];
+
+export const isValidCategory = (
+  boardType: BoardType,
+  category: unknown
+): boolean => {
+  if (!CATEGORY_BOARDS.includes(boardType)) return true; // 말머리 없는 게시판
+  return (
+    typeof category === "string" &&
+    SHARE_CATEGORIES.includes(category as ShareCategory)
+  );
+};
+
+// 회원 등급 (권한 높은 순)
+export type MemberRole = "master" | "submaster" | "staff" | "member" | "sprout";
+
+export const ROLE_LABELS: Record<MemberRole, string> = {
+  master: "길드마스터",
+  submaster: "부마스터",
+  staff: "STAFF",
+  member: "친절한카피",
+  sprout: "새싹",
+};
+
+export const ROLE_ORDER: MemberRole[] = [
+  "master",
+  "submaster",
+  "staff",
+  "member",
+  "sprout",
+];
+
+// 공지 작성·글 관리 권한을 가진 등급
+export const ADMIN_ROLES: MemberRole[] = ["master", "submaster", "staff"];
 
 export type Post = {
   id: string;
@@ -52,6 +90,7 @@ export type Post = {
   nickname: string;
   user_id: string | null;
   image_urls: string[] | null;
+  category: string | null;
   views: number;
   created_at: string;
 };
@@ -63,4 +102,11 @@ export type Comment = {
   content: string;
   user_id: string | null;
   created_at: string;
+};
+
+// created_at이 최근 며칠 이내인지 판단 (신규글 ✨ 표시용)
+export const isRecentPost = (createdAt: string, days = 7): boolean => {
+  const created = new Date(createdAt).getTime();
+  const now = Date.now();
+  return now - created <= days * 24 * 60 * 60 * 1000;
 };
