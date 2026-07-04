@@ -3,7 +3,13 @@ import { isAdminUser } from "@/lib/admin";
 import { getSupabaseServerClient } from "@/lib/supabase";
 import { getAuthUser } from "@/lib/supabase-server";
 import { getDisplayName } from "@/lib/user";
-import { ADMIN_ONLY_BOARDS, BOARD_TYPES, BoardType } from "@/lib/types";
+import {
+  ADMIN_ONLY_BOARDS,
+  BOARD_TYPES,
+  BoardType,
+  CATEGORY_BOARDS,
+  isValidCategory,
+} from "@/lib/types";
 
 const VALID_TYPES = BOARD_TYPES.map((board) => board.type);
 
@@ -21,7 +27,7 @@ export async function GET(request: NextRequest) {
     const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from("posts")
-      .select("id, board_type, title, nickname, views, created_at")
+      .select("id, board_type, title, nickname, category, views, created_at")
       .eq("board_type", boardType)
       .order("created_at", { ascending: false });
 
@@ -45,13 +51,17 @@ const sanitizeImageUrls = (value: unknown): string[] => {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { board_type, title, content, image_urls } = body ?? {};
+  const { board_type, title, content, image_urls, category } = body ?? {};
 
   if (!board_type || !VALID_TYPES.includes(board_type) || !title?.trim() || !content?.trim()) {
     return NextResponse.json(
       { error: "제목과 내용을 모두 입력해주세요." },
       { status: 400 }
     );
+  }
+
+  if (!isValidCategory(board_type, category)) {
+    return NextResponse.json({ error: "말머리를 선택해주세요." }, { status: 400 });
   }
 
   try {
@@ -83,6 +93,7 @@ export async function POST(request: NextRequest) {
         nickname: getDisplayName(user),
         user_id: user.id,
         image_urls: sanitizeImageUrls(image_urls),
+        category: CATEGORY_BOARDS.includes(board_type) ? category : null,
       })
       .select("id")
       .single();

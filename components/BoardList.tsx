@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { formatDate } from "@/lib/format";
 import { PostSummary } from "@/lib/posts";
-import { BoardConfig } from "@/lib/types";
+import { BoardConfig, isRecentPost } from "@/lib/types";
 
 type BoardListProps = {
   board: BoardConfig;
@@ -50,7 +50,17 @@ const BoardList = ({ board, posts }: BoardListProps): JSX.Element => {
               className="board-row"
             >
               <span className="text-ink/50">{posts.length - index}</span>
-              <span className="truncate font-semibold">{post.title}</span>
+              <span className="truncate font-semibold">
+                {isRecentPost(post.created_at) && (
+                  <span title="최근 1주일 이내 게시글">✨ </span>
+                )}
+                {post.category && (
+                  <span className="mr-1 font-body text-xs font-semibold text-skydeep">
+                    [{post.category}]
+                  </span>
+                )}
+                {post.title}
+              </span>
               <span className="hidden truncate text-ink/60 sm:inline">{post.nickname}</span>
               <span className="text-ink/50">{formatDate(post.created_at)}</span>
               <span className="text-ink/50">{post.views}</span>

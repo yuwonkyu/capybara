@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import PostDetail from "@/components/PostDetail";
 import { isAdminUser } from "@/lib/admin";
-import { fetchComments, fetchPostWithViewIncrement } from "@/lib/posts";
+import { fetchComments, fetchPost } from "@/lib/posts";
 import { getAuthUser } from "@/lib/supabase-server";
 import { getBoardConfig } from "@/lib/types";
 
@@ -31,7 +31,7 @@ const PostPage = async ({ params }: PostPageProps): Promise<JSX.Element> => {
   }
 
   const [post, comments, isAdmin] = await Promise.all([
-    fetchPostWithViewIncrement(id),
+    fetchPost(id),
     fetchComments(id),
     isAdminUser(user.id),
   ]);

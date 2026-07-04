@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminUser } from "@/lib/admin";
 import { getSupabaseServerClient } from "@/lib/supabase";
 import { getAuthUser } from "@/lib/supabase-server";
+import { CATEGORY_BOARDS, isValidCategory } from "@/lib/types";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -19,9 +20,13 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 
     const supabase = getSupabaseServerClient();
 
+    // 수정 화면 등에서 원본을 불러올 때 사용 — 조회수는 올리지 않는다
+    // (조회수 증가는 상세 페이지 서버 렌더링에서만 처리)
     const { data: post, error: fetchError } = await supabase
       .from("posts")
-      .select("id, board_type, title, content, nickname, user_id, image_urls, views, created_at")
+      .select(
+        "id, board_type, title, content, nickname, user_id, image_urls, category, views, created_at"
+      )
       .eq("id", id)
       .single();
 
@@ -29,14 +34,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "게시글을 찾을 수 없습니다." }, { status: 404 });
     }
 
-    const { data: updated } = await supabase
-      .from("posts")
-      .update({ views: post.views + 1 })
-      .eq("id", id)
-      .select("id, board_type, title, content, nickname, user_id, image_urls, views, created_at")
-      .single();
-
-    return NextResponse.json({ post: updated ?? post });
+    return NextResponse.json({ post });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "게시글을 불러오지 못했습니다." },
@@ -55,7 +53,7 @@ const sanitizeImageUrls = (value: unknown): string[] => {
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   const { id } = await params;
   const body = await request.json();
-  const { title, content, image_urls } = body ?? {};
+  const { title, content, image_urls, category } = body ?? {};
 
   if (!title?.trim() || !content?.trim()) {
     return NextResponse.json(
@@ -74,7 +72,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     const { data: post, error: fetchError } = await supabase
       .from("posts")
-      .select("user_id")
+      .select("user_id, board_type")
       .eq("id", id)
       .single();
 
@@ -89,12 +87,17 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    if (!isValidCategory(post.board_type, category)) {
+      return NextResponse.json({ error: "말머리를 선택해주세요." }, { status: 400 });
+    }
+
     const { error: updateError } = await supabase
       .from("posts")
       .update({
         title: title.trim(),
         content: content.trim(),
         image_urls: sanitizeImageUrls(image_urls),
+        category: CATEGORY_BOARDS.includes(post.board_type) ? category : null,
       })
       .eq("id", id);
 

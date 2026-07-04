@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useAuthUser } from "@/lib/use-auth-user";
 import { getAvatarUrl, getDisplayName } from "@/lib/user";
 
@@ -9,6 +10,25 @@ const AuthButton = (): JSX.Element | null => {
   const router = useRouter();
   const pathname = usePathname();
   const { supabase, user, ready } = useAuthUser();
+  const [isMaster, setIsMaster] = useState(false);
+
+  // 로그인 사용자의 등급을 확인해 길드마스터에게만 관리자 링크를 노출
+  useEffect(() => {
+    if (!user) {
+      setIsMaster(false);
+      return;
+    }
+    let cancelled = false;
+    fetch("/api/me/role")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled) setIsMaster(data.role === "master");
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   // 세션 확인 중에는 잠깐 숨겨서 로그인/로그아웃 버튼이 깜빡이지 않게 한다
   if (supabase && !ready) return null;
@@ -66,6 +86,14 @@ const AuthButton = (): JSX.Element | null => {
       <span className="font-body text-sm text-ink/80">
         <span className="font-semibold text-mintdeep">{getDisplayName(user)}</span> 님
       </span>
+      {isMaster && (
+        <Link
+          href="/admin"
+          className="font-body rounded-full border border-mintdeep/40 bg-mint/40 px-3 py-1.5 text-xs font-semibold text-mintdeep transition hover:bg-mint/60"
+        >
+          관리자
+        </Link>
+      )}
       <Link
         href="/profile"
         className="font-body rounded-full border border-sand bg-white px-3 py-1.5 text-xs text-ink/70 transition hover:bg-cream"

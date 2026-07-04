@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { formatDate } from "@/lib/format";
 import { PostSummary } from "@/lib/posts";
-import { BoardType } from "@/lib/types";
+import { BoardType, isRecentPost } from "@/lib/types";
 
 type LatestPostsProps = {
   board: BoardType;
@@ -37,7 +37,10 @@ const LatestPosts = ({ board, title, posts }: LatestPostsProps): JSX.Element => 
                 href={`/board/${board}/${post.id}`}
                 className="list-item flex items-center justify-between gap-2"
               >
-                <span className="truncate font-body text-sm text-ink">{post.title}</span>
+                <span className="truncate font-body text-sm text-ink">
+                  {isRecentPost(post.created_at) && "✨ "}
+                  {post.title}
+                </span>
                 <span className="shrink-0 font-body text-xs text-ink/40">
                   {formatDate(post.created_at)}
                 </span>

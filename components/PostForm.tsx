@@ -1,17 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { ChangeEvent, ClipboardEvent, FormEvent, useRef, useState } from "react";
 import {
-  ChangeEvent,
-  ClipboardEvent,
-  FormEvent,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { BoardConfig } from "@/lib/types";
+  BoardConfig,
+  CATEGORY_BOARDS,
+  SHARE_CATEGORIES,
+} from "@/lib/types";
 
-const MAX_IMAGES = 5;
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
 type PostFormProps = {
   board: BoardConfig;
@@ -20,6 +17,7 @@ type PostFormProps = {
   initialTitle?: string;
   initialContent?: string;
   initialImageUrls?: string[];
+  initialCategory?: string | null;
 };
 
 const PostForm = ({
@@ -29,41 +27,79 @@ const PostForm = ({
   initialTitle = "",
   initialContent = "",
   initialImageUrls = [],
+  initialCategory = null,
 }: PostFormProps): JSX.Element => {
   const router = useRouter();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
+  const [category, setCategory] = useState<string>(
+    initialCategory ?? SHARE_CATEGORIES[0]
+  );
+  // content에 인라인 삽입된 이미지 URL 모음 (썸네일/OG용)
   const [imageUrls, setImageUrls] = useState<string[]>(initialImageUrls);
-  const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const previews = useMemo(
-    () => files.map((file) => URL.createObjectURL(file)),
-    [files]
-  );
+  const needsCategory = CATEGORY_BOARDS.includes(board.type);
 
-  useEffect(() => {
-    return () => previews.forEach((url) => URL.revokeObjectURL(url));
-  }, [previews]);
-
-  const totalImages = imageUrls.length + files.length;
-
-  const addFiles = (selected: File[]) => {
-    if (selected.length === 0) return;
-
-    const remaining = MAX_IMAGES - totalImages;
-    if (remaining <= 0) {
-      setError(`이미지는 최대 ${MAX_IMAGES}장까지 올릴 수 있어요.`);
+  // 커서 위치에 텍스트를 삽입한다
+  const insertAtCursor = (text: string) => {
+    const el = textareaRef.current;
+    if (!el) {
+      setContent((prev) => prev + text);
       return;
+    }
+    const start = el.selectionStart ?? content.length;
+    const end = el.selectionEnd ?? content.length;
+    const next = content.slice(0, start) + text + content.slice(end);
+    setContent(next);
+    // 삽입 후 커서를 삽입한 텍스트 뒤로 이동
+    requestAnimationFrame(() => {
+      el.focus();
+      const pos = start + text.length;
+      el.setSelectionRange(pos, pos);
+    });
+  };
+
+  const uploadImage = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch("/api/upload", { method: "POST", body: formData });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? "이미지 업로드에 실패했습니다.");
+    return data.url as string;
+  };
+
+  const handleImageFiles = async (files: File[]) => {
+    const images = files.filter((f) => f.type.startsWith("image/"));
+    if (images.length === 0) return;
+
+    for (const file of images) {
+      if (file.size > MAX_IMAGE_SIZE) {
+        setError("이미지는 장당 5MB 이하만 올릴 수 있어요.");
+        return;
+      }
     }
 
     setError(null);
-    setFiles((prev) => [...prev, ...selected.slice(0, remaining)]);
+    setUploading(true);
+    try {
+      for (const file of images) {
+        const url = await uploadImage(file);
+        insertAtCursor(`\n![이미지](${url})\n`);
+        setImageUrls((prev) => [...prev, url]);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "이미지 업로드에 실패했습니다.");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    addFiles(Array.from(event.target.files ?? []));
+    handleImageFiles(Array.from(event.target.files ?? []));
     event.target.value = "";
   };
 
@@ -74,33 +110,9 @@ const PostForm = ({
       .map((item) => item.getAsFile())
       .filter((file): file is File => file !== null);
 
-    if (imageFiles.length === 0) return;
-
-    // 이미지가 붙여넣기되면 텍스트로는 아무것도 들어가지 않으니 기본 동작을 막을 필요는 없지만,
-    // 혹시 모를 파일 경로 텍스트 삽입을 방지하기 위해 막아둔다.
+    if (imageFiles.length === 0) return; // 일반 텍스트/링크 붙여넣기는 그대로 둔다
     event.preventDefault();
-    addFiles(imageFiles);
-  };
-
-  const removeExistingImage = (url: string) => {
-    setImageUrls((prev) => prev.filter((item) => item !== url));
-  };
-
-  const removeNewFile = (index: number) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const uploadFiles = async (): Promise<string[]> => {
-    const urls: string[] = [];
-    for (const file of files) {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "이미지 업로드에 실패했습니다.");
-      urls.push(data.url);
-    }
-    return urls;
+    handleImageFiles(imageFiles);
   };
 
   const handleSubmit = async (event: FormEvent) => {
@@ -108,20 +120,19 @@ const PostForm = ({
     setError(null);
     setSubmitting(true);
 
-    try {
-      const uploadedUrls = await uploadFiles();
-      const allImageUrls = [...imageUrls, ...uploadedUrls];
+    const payload = {
+      title,
+      content,
+      image_urls: imageUrls,
+      category: needsCategory ? category : null,
+    };
 
+    try {
       if (mode === "create") {
         const res = await fetch("/api/posts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            board_type: board.type,
-            title,
-            content,
-            image_urls: allImageUrls,
-          }),
+          body: JSON.stringify({ board_type: board.type, ...payload }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "게시글을 작성하지 못했습니다.");
@@ -131,7 +142,7 @@ const PostForm = ({
         const res = await fetch(`/api/posts/${postId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title, content, image_urls: allImageUrls }),
+          body: JSON.stringify(payload),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "게시글을 수정하지 못했습니다.");
@@ -150,6 +161,28 @@ const PostForm = ({
         {board.label} · {mode === "create" ? "글쓰기" : "글 수정"}
       </h1>
 
+      {needsCategory && (
+        <div>
+          <label className="font-body mb-1 block text-sm text-ink/70">말머리</label>
+          <div className="flex flex-wrap gap-2">
+            {SHARE_CATEGORIES.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setCategory(c)}
+                className={`font-body rounded-full px-4 py-1.5 text-sm transition ${
+                  category === c
+                    ? "bg-mint font-semibold text-mintdeep"
+                    : "border border-sand bg-white text-ink/60 hover:bg-cream"
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div>
         <label className="font-body mb-1 block text-sm text-ink/70">제목</label>
         <input
@@ -162,78 +195,40 @@ const PostForm = ({
       </div>
 
       <div>
-        <label className="font-body mb-1 block text-sm text-ink/70">내용</label>
+        <div className="mb-1 flex items-center justify-between">
+          <label className="font-body block text-sm text-ink/70">내용</label>
+          <label className="font-body inline-flex cursor-pointer items-center gap-1 rounded-full bg-mint px-3 py-1 text-xs font-semibold text-mintdeep hover:bg-mint/80">
+            🖼️ 이미지 넣기
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/gif,image/webp"
+              multiple
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </label>
+        </div>
         <textarea
-          className="field-input min-h-[220px] resize-y"
+          ref={textareaRef}
+          className="field-input min-h-[300px] resize-y"
           value={content}
           onChange={(event) => setContent(event.target.value)}
           onPaste={handleContentPaste}
-          placeholder="내용을 입력해주세요 (이미지를 복사한 뒤 Ctrl+V로 바로 붙여넣을 수 있어요)"
+          placeholder="내용을 입력해주세요.&#10;- 이미지: 커서 위치에 Ctrl+V로 붙여넣거나 위 [이미지 넣기] 버튼 사용&#10;- 링크: 주소(https://...)를 그대로 붙여넣으면 자동으로 연결돼요"
           required
         />
-      </div>
-
-      <div>
-        <label className="font-body mb-1 block text-sm text-ink/70">
-          이미지 첨부 ({totalImages}/{MAX_IMAGES})
-        </label>
-        <input
-          type="file"
-          accept="image/png,image/jpeg,image/gif,image/webp"
-          multiple
-          onChange={handleFileChange}
-          className="font-body block w-full text-sm text-ink/70 file:mr-3 file:rounded-full file:border-0 file:bg-mint file:px-4 file:py-2 file:font-body file:text-sm file:font-semibold file:text-mintdeep hover:file:bg-mint/80"
-        />
         <p className="font-body mt-1 text-xs text-ink/40">
-          PNG, JPG, GIF, WEBP · 장당 5MB 이하 · 최대 {MAX_IMAGES}장
+          이미지는 원하는 위치(커서)에 삽입돼요. PNG·JPG·GIF·WEBP, 장당 5MB 이하.
         </p>
-
-        {(imageUrls.length > 0 || files.length > 0) && (
-          <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
-            {imageUrls.map((url) => (
-              <div key={url} className="relative">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={url}
-                  alt="첨부 이미지"
-                  className="aspect-square w-full rounded-xl border border-sand object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeExistingImage(url)}
-                  className="absolute right-1 top-1 rounded-full bg-black/50 px-2 py-0.5 text-xs text-white hover:bg-black/70"
-                  aria-label="이미지 삭제"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-            {files.map((file, index) => (
-              <div key={`${file.name}-${index}`} className="relative">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={previews[index]}
-                  alt="첨부 예정 이미지"
-                  className="aspect-square w-full rounded-xl border border-mintdeep/40 object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeNewFile(index)}
-                  className="absolute right-1 top-1 rounded-full bg-black/50 px-2 py-0.5 text-xs text-white hover:bg-black/70"
-                  aria-label="이미지 삭제"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
+        {uploading && (
+          <p className="font-body mt-1 text-xs text-mintdeep">이미지 업로드 중...</p>
         )}
       </div>
 
       {error && <p className="font-body text-sm text-red-500">{error}</p>}
 
       <div className="flex gap-2">
-        <button type="submit" className="btn-primary" disabled={submitting}>
+        <button type="submit" className="btn-primary" disabled={submitting || uploading}>
           {submitting ? "처리 중..." : mode === "create" ? "등록하기" : "수정하기"}
         </button>
         <button
