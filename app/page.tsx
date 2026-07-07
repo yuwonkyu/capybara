@@ -1,12 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import LatestPosts from "@/components/LatestPosts";
-import { getVisibleLinks } from "@/lib/links";
+import ShortcutLinks from "@/components/ShortcutLinks";
 import { fetchBoardPosts } from "@/lib/posts";
-import { getAuthUser } from "@/lib/supabase-server";
 import { BOARD_TYPES } from "@/lib/types";
 
-export const dynamic = "force-dynamic";
+// 홈은 로그인 여부와 무관한 부분만 서버에서 렌더하고 캐시한다.
+// 새 글은 60초 이내 또는 글 작성 시 revalidatePath로 갱신된다.
+export const revalidate = 60;
 
 const highlights = [
   "방송인 친절한 카피바라씨의 길드",
@@ -15,12 +16,10 @@ const highlights = [
 ];
 
 const Home = async (): Promise<JSX.Element> => {
-  const [user, notices, updates] = await Promise.all([
-    getAuthUser(),
+  const [notices, updates] = await Promise.all([
     fetchBoardPosts("notice", 5),
     fetchBoardPosts("update", 5),
   ]);
-  const shortcutLinks = getVisibleLinks(Boolean(user));
 
   return (
     <>
@@ -93,20 +92,7 @@ const Home = async (): Promise<JSX.Element> => {
         <p className="font-body mb-3 text-sm text-ink/60">
           방송과 길드 채팅방은 아래 링크에서 만나볼 수 있어요.
         </p>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {shortcutLinks.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-xl bg-sky/30 p-3 font-body text-sm text-skydeep shadow-sm transition hover:-translate-y-0.5 hover:bg-sky/60"
-            >
-              <p className="font-semibold">{link.label}</p>
-              <p className="mt-0.5 text-xs text-skydeep/70">{link.description}</p>
-            </a>
-          ))}
-        </div>
+        <ShortcutLinks />
       </section>
     </>
   );

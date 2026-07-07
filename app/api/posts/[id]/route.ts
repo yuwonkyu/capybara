@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminUser } from "@/lib/admin";
 import { getSupabaseServerClient } from "@/lib/supabase";
@@ -103,6 +104,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     if (updateError) throw updateError;
 
+    revalidatePath(`/board/${post.board_type}`);
+    revalidatePath(`/board/${post.board_type}/${id}`);
+    revalidatePath("/");
+
     return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json(
@@ -125,7 +130,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 
     const { data: post, error: fetchError } = await supabase
       .from("posts")
-      .select("user_id")
+      .select("user_id, board_type")
       .eq("id", id)
       .single();
 
@@ -143,6 +148,9 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 
     const { error: deleteError } = await supabase.from("posts").delete().eq("id", id);
     if (deleteError) throw deleteError;
+
+    revalidatePath(`/board/${post.board_type}`);
+    revalidatePath("/");
 
     return NextResponse.json({ ok: true });
   } catch (error) {
