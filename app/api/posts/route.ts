@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminUser } from "@/lib/admin";
 import { getSupabaseServerClient } from "@/lib/supabase";
@@ -99,6 +100,10 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) throw error;
+
+    // 캐시된 목록/홈을 즉시 갱신
+    revalidatePath(`/board/${board_type}`);
+    revalidatePath("/");
 
     return NextResponse.json({ id: data.id }, { status: 201 });
   } catch (error) {

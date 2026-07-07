@@ -12,17 +12,28 @@ const AuthButton = (): JSX.Element | null => {
   const { supabase, user, ready } = useAuthUser();
   const [isMaster, setIsMaster] = useState(false);
 
-  // 로그인 사용자의 등급을 확인해 길드마스터에게만 관리자 링크를 노출
+  // 로그인 사용자의 등급을 확인해 길드마스터에게만 관리자 링크를 노출.
+  // 등급은 자주 바뀌지 않으므로 세션 동안 캐시해 페이지마다 재조회하지 않는다.
   useEffect(() => {
     if (!user) {
       setIsMaster(false);
       return;
     }
+
+    const cacheKey = `role_${user.id}`;
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      setIsMaster(cached === "master");
+      return;
+    }
+
     let cancelled = false;
     fetch("/api/me/role")
       .then((res) => res.json())
       .then((data) => {
-        if (!cancelled) setIsMaster(data.role === "master");
+        if (cancelled) return;
+        if (data.role) sessionStorage.setItem(cacheKey, data.role);
+        setIsMaster(data.role === "master");
       })
       .catch(() => {});
     return () => {
