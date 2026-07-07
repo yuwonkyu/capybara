@@ -17,10 +17,7 @@ const highlights = [
 ];
 
 const Home = async (): Promise<JSX.Element> => {
-  const [notices, updates] = await Promise.all([
-    fetchBoardPosts("notice", 5),
-    fetchBoardPosts("update", 5),
-  ]);
+  const notices = await fetchBoardPosts("notice", 5);
 
   return (
     <>
@@ -71,21 +68,47 @@ const Home = async (): Promise<JSX.Element> => {
       </section>
 
       <section className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {BOARD_TYPES.map((board) => (
-          <Link
-            key={board.type}
-            href={`/board/${board.type}`}
-            className="cute-card block transition hover:-translate-y-1"
-          >
-            <p className="font-display text-xl text-mintdeep">{board.label}</p>
-            <p className="font-body mt-1 text-sm text-ink/60">{board.description}</p>
-          </Link>
-        ))}
+        {BOARD_TYPES.map((board) =>
+          board.externalUrl ? (
+            <a
+              key={board.type}
+              href={board.externalUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="cute-card block transition hover:-translate-y-1"
+            >
+              <p className="font-display text-xl text-mintdeep">{board.label} ↗</p>
+              <p className="font-body mt-1 text-sm text-ink/60">{board.description}</p>
+            </a>
+          ) : (
+            <Link
+              key={board.type}
+              href={`/board/${board.type}`}
+              className="cute-card block transition hover:-translate-y-1"
+            >
+              <p className="font-display text-xl text-mintdeep">{board.label}</p>
+              <p className="font-body mt-1 text-sm text-ink/60">{board.description}</p>
+            </Link>
+          )
+        )}
       </section>
 
       <section className="mb-5 grid gap-4 md:grid-cols-2">
         <LatestPosts board="notice" title="최근 공지" posts={notices} />
-        <LatestPosts board="update" title="최근 업데이트" posts={updates} />
+        <article className="cute-card flex flex-col items-start justify-center gap-2">
+          <h2 className="title mb-0">업데이트 소식</h2>
+          <p className="font-body text-sm text-ink/60">
+            메이플 플래닛 공식 업데이트 소식은 외부 사이트에서 확인하세요.
+          </p>
+          <a
+            href="https://mapleplanet.co.kr/board/update"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-primary"
+          >
+            업데이트 게시판 바로가기 ↗
+          </a>
+        </article>
       </section>
 
       <section className="mb-5 cute-card">

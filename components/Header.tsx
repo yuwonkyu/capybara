@@ -8,10 +8,11 @@ import { getVisibleLinks } from "@/lib/links";
 import { useAuthUser } from "@/lib/use-auth-user";
 
 const NAV_LINKS = [
-  { href: "/", label: "홈" },
+  { href: "/", label: "홈", external: false },
   ...BOARD_TYPES.map((board) => ({
-    href: `/board/${board.type}`,
+    href: board.externalUrl ?? `/board/${board.type}`,
     label: board.label,
+    external: Boolean(board.externalUrl),
   })),
 ];
 
@@ -31,6 +32,19 @@ const Header = (): JSX.Element => {
         <div className="flex flex-col gap-2 md:items-end">
           <nav className="flex flex-wrap gap-1.5">
             {NAV_LINKS.map((link) => {
+              if (link.external) {
+                return (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="nav-link"
+                  >
+                    {link.label}
+                  </a>
+                );
+              }
               const isActive =
                 link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
               return (

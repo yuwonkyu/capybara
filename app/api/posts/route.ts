@@ -9,6 +9,7 @@ import {
   BOARD_TYPES,
   BoardType,
   CATEGORY_BOARDS,
+  getBoardConfig,
   isValidCategory,
 } from "@/lib/types";
 
@@ -63,6 +64,13 @@ export async function POST(request: NextRequest) {
 
   if (!isValidCategory(board_type, category)) {
     return NextResponse.json({ error: "말머리를 선택해주세요." }, { status: 400 });
+  }
+
+  if (getBoardConfig(board_type)?.externalUrl) {
+    return NextResponse.json(
+      { error: "이 게시판은 외부 사이트에서 운영돼요. 글쓰기를 지원하지 않습니다." },
+      { status: 403 }
+    );
   }
 
   try {
