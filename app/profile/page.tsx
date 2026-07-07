@@ -1,5 +1,9 @@
+import MyPosts from "@/components/MyPosts";
 import ProfileForm from "@/components/ProfileForm";
+import { fetchMyPosts } from "@/lib/posts";
 import { getAuthUser } from "@/lib/supabase-server";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "내 정보 관리",
@@ -20,7 +24,14 @@ const ProfilePage = async (): Promise<JSX.Element> => {
     );
   }
 
-  return <ProfileForm />;
+  const myPosts = await fetchMyPosts(user.id);
+
+  return (
+    <div className="space-y-4">
+      <ProfileForm />
+      <MyPosts posts={myPosts} />
+    </div>
+  );
 };
 
 export default ProfilePage;

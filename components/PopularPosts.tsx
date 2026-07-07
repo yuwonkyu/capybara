@@ -32,13 +32,18 @@ const PopularPosts = ({ posts }: PopularPostsProps): JSX.Element => {
                   className="list-item flex items-center justify-between gap-2"
                 >
                   <span className="flex min-w-0 items-center gap-1.5">
-                    <span className="shrink-0 font-body text-[11px] font-semibold text-mintdeep">
+                    <span className="shrink-0 font-body text-[11px] font-semibold text-skydeep">
                       [{label}]
                     </span>
                     <span className="truncate font-body text-sm text-ink">
                       {isRecentPost(post.created_at) && "✨ "}
                       {post.title}
                     </span>
+                    {post.comment_count > 0 && (
+                      <span className="shrink-0 font-body text-[11px] font-semibold text-mintdeep">
+                        [{post.comment_count}]
+                      </span>
+                    )}
                   </span>
                   <span className="shrink-0 font-body text-xs text-ink/40">
                     조회 {post.views}
