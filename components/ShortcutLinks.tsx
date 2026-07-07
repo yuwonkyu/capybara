@@ -20,7 +20,9 @@ const ShortcutLinks = (): JSX.Element => {
           className="rounded-xl bg-sky/30 p-3 font-body text-sm text-skydeep shadow-sm transition hover:-translate-y-0.5 hover:bg-sky/60"
         >
           <p className="font-semibold">{link.label}</p>
-          <p className="mt-0.5 text-xs text-skydeep/70">{link.description}</p>
+          <p className="mt-0.5 hidden text-xs text-skydeep/70 sm:block">
+            {link.description}
+          </p>
         </a>
       ))}
     </div>

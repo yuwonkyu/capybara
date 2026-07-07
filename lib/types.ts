@@ -47,20 +47,21 @@ export const getBoardConfig = (type: string): BoardConfig | undefined =>
 
 export const ADMIN_ONLY_BOARDS: BoardType[] = ["notice"];
 
-// 거래 게시판 말머리
-export const CATEGORY_BOARDS: BoardType[] = ["share"];
-export const SHARE_CATEGORIES = ["나눔", "요청", "판매"] as const;
-export type ShareCategory = (typeof SHARE_CATEGORIES)[number];
+// 게시판별 말머리 목록 (여기 등록된 게시판만 말머리 사용)
+export const BOARD_CATEGORIES: Partial<Record<BoardType, readonly string[]>> = {
+  hunt: ["사냥", "보스", "쩔"],
+  share: ["나눔", "요청", "판매"],
+};
+
+export const CATEGORY_BOARDS = Object.keys(BOARD_CATEGORIES) as BoardType[];
 
 export const isValidCategory = (
   boardType: BoardType,
   category: unknown
 ): boolean => {
-  if (!CATEGORY_BOARDS.includes(boardType)) return true; // 말머리 없는 게시판
-  return (
-    typeof category === "string" &&
-    SHARE_CATEGORIES.includes(category as ShareCategory)
-  );
+  const categories = BOARD_CATEGORIES[boardType];
+  if (!categories) return true; // 말머리 없는 게시판
+  return typeof category === "string" && categories.includes(category);
 };
 
 // 회원 등급 (권한 높은 순)

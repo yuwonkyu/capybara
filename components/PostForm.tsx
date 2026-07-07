@@ -2,11 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { ChangeEvent, ClipboardEvent, FormEvent, useRef, useState } from "react";
-import {
-  BoardConfig,
-  CATEGORY_BOARDS,
-  SHARE_CATEGORIES,
-} from "@/lib/types";
+import { BOARD_CATEGORIES, BoardConfig } from "@/lib/types";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
@@ -33,8 +29,9 @@ const PostForm = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
+  const categories = BOARD_CATEGORIES[board.type];
   const [category, setCategory] = useState<string>(
-    initialCategory ?? SHARE_CATEGORIES[0]
+    initialCategory ?? categories?.[0] ?? ""
   );
   // content에 인라인 삽입된 이미지 URL 모음 (썸네일/OG용)
   const [imageUrls, setImageUrls] = useState<string[]>(initialImageUrls);
@@ -42,7 +39,7 @@ const PostForm = ({
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const needsCategory = CATEGORY_BOARDS.includes(board.type);
+  const needsCategory = Boolean(categories);
 
   // 커서 위치에 텍스트를 삽입한다
   const insertAtCursor = (text: string) => {
@@ -165,7 +162,7 @@ const PostForm = ({
         <div>
           <label className="font-body mb-1 block text-sm text-ink/70">말머리</label>
           <div className="flex flex-wrap gap-2">
-            {SHARE_CATEGORIES.map((c) => (
+            {categories?.map((c) => (
               <button
                 key={c}
                 type="button"
