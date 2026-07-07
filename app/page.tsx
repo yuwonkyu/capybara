@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import LatestPosts from "@/components/LatestPosts";
 import ShortcutLinks from "@/components/ShortcutLinks";
+import { GAME_INFO_LINKS } from "@/lib/links";
 import { fetchBoardPosts } from "@/lib/posts";
 import { BOARD_TYPES } from "@/lib/types";
 
@@ -87,12 +88,33 @@ const Home = async (): Promise<JSX.Element> => {
         <LatestPosts board="update" title="최근 업데이트" posts={updates} />
       </section>
 
-      <section className="cute-card">
+      <section className="mb-5 cute-card">
         <h2 className="title">바로가기</h2>
         <p className="font-body mb-3 text-sm text-ink/60">
           방송과 길드 채팅방은 아래 링크에서 만나볼 수 있어요.
         </p>
         <ShortcutLinks />
+      </section>
+
+      <section className="cute-card">
+        <h2 className="title">게임 정보 사이트</h2>
+        <p className="font-body mb-3 text-sm text-ink/60">
+          시세 조회, 몬스터 정보 등 플레이에 도움되는 외부 사이트예요.
+        </p>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {GAME_INFO_LINKS.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-xl bg-mint/30 p-3 font-body text-sm text-mintdeep shadow-sm transition hover:-translate-y-0.5 hover:bg-mint/60"
+            >
+              <p className="font-semibold">{link.label}</p>
+              <p className="mt-0.5 text-xs text-mintdeep/70">{link.description}</p>
+            </a>
+          ))}
+        </div>
       </section>
     </>
   );

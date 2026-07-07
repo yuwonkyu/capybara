@@ -1,6 +1,6 @@
 "use client";
 
-import { getVisibleLinks } from "@/lib/links";
+import { GAME_INFO_LINKS, getVisibleLinks } from "@/lib/links";
 import { useAuthUser } from "@/lib/use-auth-user";
 
 const Footer = (): JSX.Element => {
@@ -21,6 +21,19 @@ const Footer = (): JSX.Element => {
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-skydeep hover:underline"
+          >
+            {link.label}
+          </a>
+        ))}
+      </div>
+      <div className="mt-2 flex flex-wrap justify-center gap-3 font-body text-xs text-ink/40">
+        {GAME_INFO_LINKS.map((link) => (
+          <a
+            key={link.href}
+            href={link.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-mintdeep hover:underline"
           >
             {link.label}
           </a>
