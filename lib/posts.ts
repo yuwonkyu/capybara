@@ -10,6 +10,31 @@ export type PostSummary = {
   created_at: string;
 };
 
+export type PopularPost = PostSummary & { board_type: BoardType };
+
+// 인기 게시글: 자유·공략·사냥·거래 게시판에서 조회수 높은 순으로 모은다.
+const POPULAR_BOARDS: BoardType[] = ["free", "guide", "hunt", "share"];
+
+export const fetchPopularPosts = async (
+  limit = 5
+): Promise<PopularPost[] | null> => {
+  try {
+    const supabase = getSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("posts")
+      .select("id, board_type, title, nickname, category, views, created_at")
+      .in("board_type", POPULAR_BOARDS)
+      .order("views", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+    return data as PopularPost[];
+  } catch {
+    return null;
+  }
+};
+
 const POST_DETAIL_FIELDS =
   "id, board_type, title, content, nickname, user_id, image_urls, category, views, created_at";
 

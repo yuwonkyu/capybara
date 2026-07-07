@@ -1,9 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import LatestPosts from "@/components/LatestPosts";
+import PopularPosts from "@/components/PopularPosts";
 import ShortcutLinks from "@/components/ShortcutLinks";
 import { GAME_INFO_LINKS } from "@/lib/links";
-import { fetchBoardPosts } from "@/lib/posts";
+import { fetchBoardPosts, fetchPopularPosts } from "@/lib/posts";
 import { BOARD_TYPES } from "@/lib/types";
 
 // 홈은 로그인 여부와 무관한 부분만 서버에서 렌더하고 캐시한다.
@@ -13,11 +14,32 @@ export const revalidate = 60;
 const highlights = [
   "방송인 친절한 카피바라씨의 길드",
   "치지직과 유튜브에서 활동 중",
-  "길드 스킬로 경험치 향상 지원 예정",
 ];
 
+const ExternalIcon = (): JSX.Element => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden
+    className="inline-block"
+  >
+    <path d="M15 3h6v6" />
+    <path d="M10 14 21 3" />
+    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+  </svg>
+);
+
 const Home = async (): Promise<JSX.Element> => {
-  const notices = await fetchBoardPosts("notice", 5);
+  const [notices, popular] = await Promise.all([
+    fetchBoardPosts("notice", 5),
+    fetchPopularPosts(5),
+  ]);
 
   return (
     <>
@@ -77,8 +99,14 @@ const Home = async (): Promise<JSX.Element> => {
               rel="noopener noreferrer"
               className="cute-card block transition hover:-translate-y-1"
             >
-              <p className="font-display text-xl text-mintdeep">{board.label} ↗</p>
-              <p className="font-body mt-1 text-sm text-ink/60">{board.description}</p>
+              <p className="font-display text-xl text-mintdeep flex items-center gap-1.5">
+                {board.label}
+                <ExternalIcon />
+              </p>
+              <p className="font-body mt-1 flex items-center gap-1 text-sm text-mintdeep/80">
+                업데이트 내용 보러가기
+                <ExternalIcon />
+              </p>
             </a>
           ) : (
             <Link
@@ -95,20 +123,7 @@ const Home = async (): Promise<JSX.Element> => {
 
       <section className="mb-5 grid gap-4 md:grid-cols-2">
         <LatestPosts board="notice" title="최근 공지" posts={notices} />
-        <article className="cute-card flex flex-col items-start justify-center gap-2">
-          <h2 className="title mb-0">업데이트 소식</h2>
-          <p className="font-body text-sm text-ink/60">
-            메이플 플래닛 공식 업데이트 소식은 외부 사이트에서 확인하세요.
-          </p>
-          <a
-            href="https://mapleplanet.co.kr/board/update"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-primary"
-          >
-            업데이트 게시판 바로가기 ↗
-          </a>
-        </article>
+        <PopularPosts posts={popular} />
       </section>
 
       <section className="mb-5 cute-card">
