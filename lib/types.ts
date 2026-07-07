@@ -32,8 +32,8 @@ export const BOARD_TYPES: BoardConfig[] = [
   },
   {
     type: "hunt",
-    label: "사냥",
-    description: "사냥 파티, 보스 파티 모집은 여기에!",
+    label: "파티",
+    description: "사냥·보스 파티 모집은 여기에!",
   },
   {
     type: "share",

@@ -12,8 +12,9 @@ export type PostSummary = {
 
 export type PopularPost = PostSummary & { board_type: BoardType };
 
-// 인기 게시글: 자유·공략·사냥·거래 게시판에서 조회수 높은 순으로 모은다.
-const POPULAR_BOARDS: BoardType[] = ["free", "guide", "hunt", "share"];
+// 인기 게시글: 자유·공략·거래 게시판에서 조회수 높은 순으로 모은다.
+// (파티 게시판은 모집글 특성상 인기 게시글에서 제외)
+const POPULAR_BOARDS: BoardType[] = ["free", "guide", "share"];
 
 export const fetchPopularPosts = async (
   limit = 5
