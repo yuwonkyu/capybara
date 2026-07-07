@@ -16,9 +16,11 @@ const BoardList = ({ board, posts }: BoardListProps): JSX.Element => {
           <h1 className="title mb-1">{board.label}</h1>
           <p className="font-body text-sm text-ink/60">{board.description}</p>
         </div>
-        <Link href={`/board/${board.type}/write`} className="btn-primary">
-          글쓰기
-        </Link>
+        {!board.externalUrl && (
+          <Link href={`/board/${board.type}/write`} className="btn-primary">
+            글쓰기
+          </Link>
+        )}
       </div>
 
       {!posts && (

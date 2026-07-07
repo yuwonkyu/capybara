@@ -4,6 +4,8 @@ export type BoardConfig = {
   type: BoardType;
   label: string;
   description: string;
+  /** 있으면 내부 게시판 대신 이 외부 주소로 바로 이동한다 (글쓰기 없음) */
+  externalUrl?: string;
 };
 
 export const BOARD_TYPES: BoardConfig[] = [
@@ -15,7 +17,8 @@ export const BOARD_TYPES: BoardConfig[] = [
   {
     type: "update",
     label: "업데이트",
-    description: "길드 소식과 변경 사항을 기록합니다.",
+    description: "메이플 플래닛 공식 업데이트 소식은 외부 사이트에서 확인하세요.",
+    externalUrl: "https://mapleplanet.co.kr/board/update",
   },
   {
     type: "free",

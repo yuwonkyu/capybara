@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import PostForm from "@/components/PostForm";
 import { isAdminUser } from "@/lib/admin";
 import { getAuthUser } from "@/lib/supabase-server";
@@ -10,6 +10,10 @@ const WritePage = async ({ params }: WritePageProps): Promise<JSX.Element> => {
   const { type } = await params;
   const board = getBoardConfig(type);
   if (!board) notFound();
+
+  if (board.externalUrl) {
+    redirect(board.externalUrl);
+  }
 
   const user = await getAuthUser();
 
