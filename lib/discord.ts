@@ -84,6 +84,47 @@ export const parseInvestCount = (content: string): number | null => {
   return count;
 };
 
+/**
+ * 과거 메시지에서 기부 메소를 추측한다 (만 메소 단위).
+ * "천만원 투자했습니다" → 1000, "1500만" → 1500, "1억" → 10000
+ * 금액 표현이 없으면 null.
+ */
+export const parseMesoMan = (content: string): number | null => {
+  let text = content;
+  let man = 0;
+  let found = false;
+
+  // 억 단위
+  text = text.replace(/(\d+)\s*억/g, (_, n: string) => {
+    man += Number(n) * 10000;
+    found = true;
+    return " ";
+  });
+
+  // "2천만" 같은 숫자+천만
+  text = text.replace(/(\d+)\s*천만/g, (_, n: string) => {
+    man += Number(n) * 1000;
+    found = true;
+    return " ";
+  });
+
+  // 숫자 없는 "천만"
+  text = text.replace(/천만/g, () => {
+    man += 1000;
+    found = true;
+    return " ";
+  });
+
+  // 남은 "N만"
+  text.replace(/(\d+)\s*만/g, (_, n: string) => {
+    man += Number(n);
+    found = true;
+    return " ";
+  });
+
+  return found && man > 0 ? man : null;
+};
+
 export const pickDisplayName = (message: DiscordMessage): string =>
   message.member?.nick ??
   message.author.global_name ??
