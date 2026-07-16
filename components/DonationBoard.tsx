@@ -20,6 +20,7 @@ type DonationBoardProps = {
   summary: DonationSummary | null;
   currentUserId: string;
   isAdmin: boolean;
+  discordGuildId: string | null;
 };
 
 const DonationBoard = ({
@@ -28,6 +29,7 @@ const DonationBoard = ({
   summary,
   currentUserId,
   isAdmin,
+  discordGuildId,
 }: DonationBoardProps): JSX.Element => {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -40,7 +42,18 @@ const DonationBoard = ({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // 투자 횟수 인라인 수정 (실수 방지를 위해 자동 저장 대신 명시적으로 저장)
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editCount, setEditCount] = useState("0");
+  const [savingEdit, setSavingEdit] = useState(false);
+
   const reviewCount = (donations ?? []).filter((d) => d.needs_review).length;
+
+  // 원본 디스코드 메시지로 이동하는 링크
+  const discordLink = (d: Donation): string | null =>
+    discordGuildId && d.discord_channel_id && d.discord_message_id
+      ? `https://discord.com/channels/${discordGuildId}/${d.discord_channel_id}/${d.discord_message_id}`
+      : null;
 
   const handleImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -121,12 +134,26 @@ const DonationBoard = ({
     }
   };
 
-  // 확인필요 기록의 투자 횟수를 길마가 바로잡는다
-  const handleFixCount = async (id: string, value: string) => {
-    const count = Number(value);
-    if (!Number.isInteger(count) || count < 0) return;
+  const startEdit = (d: Donation) => {
+    setError(null);
+    setEditingId(d.id);
+    setEditCount(String(d.invest_count));
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+  };
+
+  // 투자 횟수를 길마가 바로잡는다 (저장 버튼을 눌러야 반영)
+  const handleSaveCount = async (id: string) => {
+    const count = Number(editCount);
+    if (!Number.isInteger(count) || count < 0) {
+      setError("투자 횟수는 0 이상의 숫자로 입력해주세요.");
+      return;
+    }
 
     setError(null);
+    setSavingEdit(true);
     try {
       const res = await fetch(`/api/donations/${id}`, {
         method: "PATCH",
@@ -135,9 +162,12 @@ const DonationBoard = ({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "수정에 실패했습니다.");
+      setEditingId(null);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "수정에 실패했습니다.");
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -420,6 +450,15 @@ const DonationBoard = ({
                     </span>
                     <span className="flex shrink-0 items-center gap-2 font-body text-xs text-ink/45">
                       <span>{formatDate(d.created_at)}</span>
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => startEdit(d)}
+                          className="text-ink/40 hover:text-mintdeep"
+                        >
+                          수정
+                        </button>
+                      )}
                       {canDelete && (
                         <button
                           type="button"
@@ -432,31 +471,69 @@ const DonationBoard = ({
                     </span>
                   </div>
 
+                  {/* 인증 당시 디스코드에 쓴 원문 — 스크린샷만으로 헷갈릴 때 참고 */}
+                  {d.discord_content && (
+                    <p className="font-body mt-1.5 rounded-lg bg-sky/15 px-2 py-1.5 text-xs text-ink/70">
+                      💬 {d.discord_content}
+                    </p>
+                  )}
+
                   {d.note && (
                     <p className="font-body mt-1 text-xs text-ink/60">{d.note}</p>
                   )}
 
-                  {isAdmin && d.needs_review && (
-                    <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-amber-100/60 px-2 py-1.5">
-                      <span className="font-body text-xs text-amber-800">
-                        인증샷을 보고 실제 투자 횟수를 입력해주세요 →
-                      </span>
+                  {isAdmin && d.needs_review && editingId !== d.id && (
+                    <p className="font-body mt-2 text-xs text-amber-800">
+                      ⚠️ 인증샷을 보고 <b>수정</b>을 눌러 실제 투자 횟수를 확정해주세요.
+                    </p>
+                  )}
+
+                  {isAdmin && editingId === d.id && (
+                    <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-mint/25 px-2 py-2">
+                      <span className="font-body text-xs text-mintdeep">투자 횟수</span>
                       <input
                         type="number"
                         min={0}
-                        defaultValue={d.invest_count}
-                        onBlur={(e) => {
-                          if (Number(e.target.value) !== d.invest_count) {
-                            handleFixCount(d.id, e.target.value);
-                          }
-                        }}
+                        value={editCount}
+                        onChange={(e) => setEditCount(e.target.value)}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter") e.currentTarget.blur();
+                          if (e.key === "Enter") handleSaveCount(d.id);
+                          if (e.key === "Escape") cancelEdit();
                         }}
-                        className="w-20 rounded-lg border border-amber-300 bg-white px-2 py-1 font-body text-sm text-ink"
+                        autoFocus
+                        className="w-20 rounded-lg border border-mintdeep/40 bg-white px-2 py-1 font-body text-sm text-ink"
                       />
-                      <span className="font-body text-xs text-amber-800">회</span>
+                      <span className="font-body text-xs text-mintdeep">
+                        회 = {Number(editCount || 0) * INVEST_UNIT_MAN}만 메소
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleSaveCount(d.id)}
+                        disabled={savingEdit}
+                        className="font-body rounded-full bg-mintdeep px-3 py-1 text-xs font-semibold text-white disabled:opacity-60"
+                      >
+                        {savingEdit ? "저장 중..." : "저장"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelEdit}
+                        disabled={savingEdit}
+                        className="font-body rounded-full border border-sand bg-white px-3 py-1 text-xs text-ink/70"
+                      >
+                        취소
+                      </button>
                     </div>
+                  )}
+
+                  {discordLink(d) && (
+                    <a
+                      href={discordLink(d)!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-body mt-1.5 inline-block text-xs text-skydeep hover:underline"
+                    >
+                      디스코드 원본 메시지 보기 ↗
+                    </a>
                   )}
 
                   {d.image_url && (

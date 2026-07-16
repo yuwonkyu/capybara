@@ -69,6 +69,8 @@ create table if not exists donations (
   discord_user_id text,
   discord_name text,
   discord_message_id text,
+  discord_channel_id text,
+  discord_content text,   -- 인증 당시 디스코드 메시지 원문
   -- 투자 횟수를 자동 확정하지 못해 길마 확인이 필요한 기록
   needs_review boolean not null default false,
   created_at timestamptz not null default now()
