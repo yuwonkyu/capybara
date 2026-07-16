@@ -47,6 +47,8 @@ const DonationsPage = async ({
       summary={summary}
       currentUserId={user.id}
       isAdmin={isAdmin}
+      // 원본 디스코드 메시지로 이동하는 링크를 만들 때 사용
+      discordGuildId={process.env.DISCORD_GUILD_ID ?? null}
     />
   );
 };

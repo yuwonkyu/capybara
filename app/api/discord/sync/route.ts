@@ -156,6 +156,9 @@ export async function POST() {
           discord_user_id: message.author.id,
           discord_name: fullNick,
           discord_message_id: message.id,
+          discord_channel_id: channelId,
+          // 스크린샷만으로 헷갈릴 때 참고하도록 원문을 그대로 보관
+          discord_content: message.content?.trim() || null,
           needs_review: needsReview,
           created_at: message.timestamp,
         });

@@ -22,6 +22,10 @@ export type Donation = {
   note: string | null;
   discord_user_id: string | null;
   discord_name: string | null;
+  /** 인증 당시 디스코드에 쓴 메시지 원문 */
+  discord_content: string | null;
+  discord_message_id: string | null;
+  discord_channel_id: string | null;
   /** 자동으로 횟수를 확정하지 못해 길마 확인이 필요한 기록 */
   needs_review: boolean;
   created_at: string;
@@ -43,7 +47,7 @@ export type DonationSummary = {
 };
 
 const DONATION_FIELDS =
-  "id, user_id, nickname, guild, amount_man, invest_count, image_url, note, discord_user_id, discord_name, needs_review, created_at";
+  "id, user_id, nickname, guild, amount_man, invest_count, image_url, note, discord_user_id, discord_name, discord_content, discord_message_id, discord_channel_id, needs_review, created_at";
 
 export const fetchDonations = async (
   guild: GuildName,
