@@ -1,43 +1,44 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useState } from "react";
 import {
   Donation,
   DonationSummary,
-  GUILD_SKILLS,
+  GUILDS,
+  GuildName,
   INVEST_UNIT_MAN,
   formatMan,
 } from "@/lib/donations";
 import { formatDate } from "@/lib/format";
+import { ROLE_LABELS } from "@/lib/types";
 
 type DonationBoardProps = {
-  initialDonations: Donation[] | null;
+  guild: GuildName;
+  donations: Donation[] | null;
   summary: DonationSummary | null;
   currentUserId: string;
   isAdmin: boolean;
 };
 
-const MEDALS = ["🥇", "🥈", "🥉"];
-
 const DonationBoard = ({
-  initialDonations,
+  guild,
+  donations,
   summary,
   currentUserId,
   isAdmin,
 }: DonationBoardProps): JSX.Element => {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [amountMan, setAmountMan] = useState("");
   const [investCount, setInvestCount] = useState("1");
-  const [skill, setSkill] = useState<string>(GUILD_SKILLS[0]);
   const [note, setNote] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const donations = initialDonations;
 
   const handleImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -75,9 +76,8 @@ const DonationBoard = ({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount_man: Number(amountMan || 0),
+          guild,
           invest_count: Number(investCount || 0),
-          skill,
           image_url: imageUrl,
           note,
         }),
@@ -85,7 +85,6 @@ const DonationBoard = ({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "기부 등록에 실패했습니다.");
 
-      setAmountMan("");
       setInvestCount("1");
       setNote("");
       setImageUrl(null);
@@ -95,6 +94,23 @@ const DonationBoard = ({
       setError(err instanceof Error ? err.message : "기부 등록에 실패했습니다.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleSync = async () => {
+    setError(null);
+    setMessage(null);
+    setSyncing(true);
+    try {
+      const res = await fetch("/api/discord/sync", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "동기화에 실패했습니다.");
+      setMessage(`디스코드에서 ${data.imported}건을 새로 가져왔어요.`);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "동기화에 실패했습니다.");
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -110,13 +126,26 @@ const DonationBoard = ({
     }
   };
 
-  // 투자 횟수를 입력하면 기본 메소를 자동 채워준다 (1회 = 500만)
-  const handleCountChange = (value: string) => {
-    setInvestCount(value);
-    const n = Number(value);
-    if (Number.isInteger(n) && n > 0) {
-      setAmountMan(String(n * INVEST_UNIT_MAN));
-    }
+  // 길마가 엑셀에 붙여넣을 수 있도록 CSV로 내려받는다 (엑셀 한글 깨짐 방지 BOM 포함)
+  const handleDownloadCsv = () => {
+    if (!summary) return;
+    const header = ["아이디", "투자횟수", "회원등급"];
+    const rows = summary.rows.map((r) => [
+      r.nickname,
+      String(r.totalCount),
+      r.role ? ROLE_LABELS[r.role] : "미연동",
+    ]);
+    const csv = [header, ...rows]
+      .map((cols) => cols.map((c) => `"${c.replace(/"/g, '""')}"`).join(","))
+      .join("\r\n");
+
+    const blob = new Blob([`﻿${csv}`], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${guild}_길드기부현황.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -126,30 +155,59 @@ const DonationBoard = ({
           <div>
             <h1 className="title mb-1">길드 기부현황</h1>
             <p className="font-body text-sm text-ink/60">
-              길드 스킬 투자 기록이에요. 투자 후 인증샷과 함께 등록해주세요.
+              길드 스킬 투자 1회 = {INVEST_UNIT_MAN}만 메소 기준으로 집계돼요.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            className="btn-primary"
-          >
-            {open ? "닫기" : "기부 등록"}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={handleSync}
+                className="btn-secondary"
+                disabled={syncing}
+              >
+                {syncing ? "동기화 중..." : "디스코드 동기화"}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              className="btn-primary"
+            >
+              {open ? "닫기" : "직접 등록"}
+            </button>
+          </div>
+        </div>
+
+        {/* 길드 탭 */}
+        <div className="mb-3 flex flex-wrap gap-2">
+          {GUILDS.map((g) => (
+            <Link
+              key={g}
+              href={`/donations?guild=${encodeURIComponent(g)}`}
+              className={`font-body rounded-full px-4 py-1.5 text-sm transition ${
+                guild === g
+                  ? "bg-mintdeep font-semibold text-white"
+                  : "border border-sand bg-white text-ink/60 hover:bg-cream"
+              }`}
+            >
+              {g}
+            </Link>
+          ))}
         </div>
 
         {summary && (
           <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-xl bg-mint/30 p-3 text-center">
-              <p className="font-body text-xs text-mintdeep/70">누적 기부</p>
-              <p className="font-display text-lg text-mintdeep sm:text-xl">
-                {formatMan(summary.totalMan)}
-              </p>
-            </div>
             <div className="rounded-xl bg-sky/30 p-3 text-center">
               <p className="font-body text-xs text-skydeep/70">총 투자 횟수</p>
               <p className="font-display text-lg text-skydeep sm:text-xl">
                 {summary.totalCount}회
+              </p>
+            </div>
+            <div className="rounded-xl bg-mint/30 p-3 text-center">
+              <p className="font-body text-xs text-mintdeep/70">누적 기부</p>
+              <p className="font-display text-lg text-mintdeep sm:text-xl">
+                {formatMan(summary.totalMan)}
               </p>
             </div>
             <div className="rounded-xl bg-cream p-3 text-center">
@@ -161,6 +219,7 @@ const DonationBoard = ({
           </div>
         )}
 
+        {message && <p className="font-body mt-3 text-sm text-mintdeep">{message}</p>}
         {error && <p className="font-body mt-3 text-sm text-red-500">{error}</p>}
 
         {open && (
@@ -168,59 +227,25 @@ const DonationBoard = ({
             onSubmit={handleSubmit}
             className="mt-4 space-y-3 border-t border-sand/60 pt-4"
           >
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <label className="font-body mb-1 block text-sm text-ink/70">
-                  투자 횟수
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  className="field-input"
-                  value={investCount}
-                  onChange={(e) => handleCountChange(e.target.value)}
-                  placeholder="예: 2"
-                />
-                <p className="font-body mt-1 text-xs text-ink/40">
-                  횟수를 넣으면 메소가 자동 계산돼요 (1회 = {INVEST_UNIT_MAN}만)
-                </p>
-              </div>
-
-              <div>
-                <label className="font-body mb-1 block text-sm text-ink/70">
-                  기부 메소 (만 단위)
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  className="field-input"
-                  value={amountMan}
-                  onChange={(e) => setAmountMan(e.target.value)}
-                  placeholder="예: 1000 (= 1,000만)"
-                />
-              </div>
-            </div>
+            <p className="font-body text-xs text-ink/50">
+              디스코드에 올리지 못했을 때만 사용하세요. 보통은 디스코드에{" "}
+              <b>!투자 2</b> + 인증샷을 올리면 자동으로 집계됩니다.
+            </p>
 
             <div>
               <label className="font-body mb-1 block text-sm text-ink/70">
-                투자한 길드 스킬
+                투자 횟수 ({guild})
               </label>
-              <div className="flex flex-wrap gap-2">
-                {GUILD_SKILLS.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setSkill(s)}
-                    className={`font-body rounded-full px-4 py-1.5 text-sm transition ${
-                      skill === s
-                        ? "bg-mint font-semibold text-mintdeep"
-                        : "border border-sand bg-white text-ink/60 hover:bg-cream"
-                    }`}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
+              <input
+                type="number"
+                min={1}
+                className="field-input max-w-[10rem]"
+                value={investCount}
+                onChange={(e) => setInvestCount(e.target.value)}
+              />
+              <p className="font-body mt-1 text-xs text-ink/40">
+                {Number(investCount || 0) * INVEST_UNIT_MAN}만 메소로 기록됩니다.
+              </p>
             </div>
 
             <div>
@@ -254,44 +279,62 @@ const DonationBoard = ({
                 className="field-input"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="예: 부캐길드 투자분"
                 maxLength={200}
               />
             </div>
 
-            <button type="submit" className="btn-primary" disabled={submitting || uploading}>
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={submitting || uploading}
+            >
               {submitting ? "등록 중..." : "등록하기"}
             </button>
           </form>
         )}
       </section>
 
-      {summary && summary.ranks.length > 0 && (
+      {/* 길마용 엑셀 표 */}
+      {summary && summary.rows.length > 0 && (
         <section className="cute-card">
-          <h2 className="title mb-3">🏆 기부 랭킹</h2>
-          <ul className="space-y-2">
-            {summary.ranks.map((rank, index) => (
-              <li
-                key={rank.nickname}
-                className="list-item flex items-center justify-between gap-2"
-              >
-                <span className="flex min-w-0 items-center gap-2">
-                  <span className="w-6 shrink-0 text-center font-body text-sm text-ink/50">
-                    {MEDALS[index] ?? index + 1}
-                  </span>
-                  <span className="truncate font-body text-sm font-semibold text-ink">
-                    {rank.nickname}
-                  </span>
-                </span>
-                <span className="shrink-0 font-body text-xs text-ink/60">
-                  <span className="font-semibold text-mintdeep">
-                    {formatMan(rank.totalMan)}
-                  </span>
-                  <span className="ml-2">{rank.totalCount}회</span>
-                </span>
-              </li>
-            ))}
-          </ul>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="title mb-0">{guild} 길드 기부 집계</h2>
+            <button type="button" onClick={handleDownloadCsv} className="btn-secondary">
+              엑셀(CSV) 다운로드
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse font-body text-sm">
+              <thead>
+                <tr className="border-b-2 border-mintdeep/30 bg-mint/20 text-left text-xs text-ink/70">
+                  <th className="px-3 py-2 font-semibold">아이디</th>
+                  <th className="px-3 py-2 font-semibold">투자횟수</th>
+                  <th className="px-3 py-2 font-semibold">회원등급</th>
+                </tr>
+              </thead>
+              <tbody>
+                {summary.rows.map((row) => (
+                  <tr key={row.nickname} className="border-b border-sand/60">
+                    <td className="px-3 py-2 text-ink">{row.nickname}</td>
+                    <td className="px-3 py-2 font-semibold text-mintdeep">
+                      {row.totalCount}회
+                    </td>
+                    <td className="px-3 py-2 text-ink/70">
+                      {row.role ? (
+                        ROLE_LABELS[row.role]
+                      ) : (
+                        <span className="text-ink/35">미연동</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="font-body mt-2 text-xs text-ink/40">
+            회원등급은 디스코드 계정과 사이트 계정이 연결된 경우에만 표시됩니다.
+          </p>
         </section>
       )}
 
@@ -306,7 +349,8 @@ const DonationBoard = ({
 
         {donations && donations.length === 0 && (
           <p className="font-body p-6 text-center text-sm text-ink/50">
-            아직 등록된 기부가 없어요. 첫 기부를 등록해보세요!
+            아직 등록된 기부가 없어요.
+            {isAdmin && " [디스코드 동기화]를 눌러 가져와보세요."}
           </p>
         )}
 
@@ -321,17 +365,15 @@ const DonationBoard = ({
                       <span className="font-body text-sm font-semibold text-ink">
                         {d.nickname}
                       </span>
-                      {d.skill && (
-                        <span className="font-body text-xs font-semibold text-skydeep">
-                          [{d.skill}]
-                        </span>
-                      )}
                       <span className="font-body text-sm font-semibold text-mintdeep">
-                        {formatMan(d.amount_man)}
+                        {d.invest_count}회
                       </span>
-                      {d.invest_count > 0 && (
-                        <span className="font-body text-xs text-ink/50">
-                          · {d.invest_count}회
+                      <span className="font-body text-xs text-ink/50">
+                        · {formatMan(d.amount_man)}
+                      </span>
+                      {d.discord_user_id && (
+                        <span className="font-body text-[11px] text-skydeep">
+                          디스코드
                         </span>
                       )}
                     </span>
