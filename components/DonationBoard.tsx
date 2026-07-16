@@ -40,6 +40,8 @@ const DonationBoard = ({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const reviewCount = (donations ?? []).filter((d) => d.needs_review).length;
+
   const handleImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -105,12 +107,37 @@ const DonationBoard = ({
       const res = await fetch("/api/discord/sync", { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "동기화에 실패했습니다.");
-      setMessage(`디스코드에서 ${data.imported}건을 새로 가져왔어요.`);
+      setMessage(
+        data.imported === 0
+          ? "새로 가져올 기록이 없어요."
+          : `디스코드에서 ${data.imported}건을 가져왔어요.` +
+              (data.review > 0 ? ` 그중 ${data.review}건은 횟수 확인이 필요해요.` : "")
+      );
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "동기화에 실패했습니다.");
     } finally {
       setSyncing(false);
+    }
+  };
+
+  // 확인필요 기록의 투자 횟수를 길마가 바로잡는다
+  const handleFixCount = async (id: string, value: string) => {
+    const count = Number(value);
+    if (!Number.isInteger(count) || count < 0) return;
+
+    setError(null);
+    try {
+      const res = await fetch(`/api/donations/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invest_count: count }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "수정에 실패했습니다.");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "수정에 실패했습니다.");
     }
   };
 
@@ -332,6 +359,12 @@ const DonationBoard = ({
               </tbody>
             </table>
           </div>
+          {reviewCount > 0 && (
+            <p className="font-body mt-2 text-xs text-amber-700">
+              ⚠️ 아래 최근 기부 내역에 <b>확인필요 {reviewCount}건</b>이 있어요. 횟수를
+              확정해야 집계가 정확해집니다.
+            </p>
+          )}
           <p className="font-body mt-2 text-xs text-ink/40">
             회원등급은 디스코드 계정과 사이트 계정이 연결된 경우에만 표시됩니다.
           </p>
@@ -359,7 +392,10 @@ const DonationBoard = ({
             {donations.map((d) => {
               const canDelete = isAdmin || d.user_id === currentUserId;
               return (
-                <li key={d.id} className="px-3 py-3">
+                <li
+                  key={d.id}
+                  className={`px-3 py-3 ${d.needs_review ? "bg-amber-50/60" : ""}`}
+                >
                   <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
                     <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
                       <span className="font-body text-sm font-semibold text-ink">
@@ -374,6 +410,11 @@ const DonationBoard = ({
                       {d.discord_user_id && (
                         <span className="font-body text-[11px] text-skydeep">
                           디스코드
+                        </span>
+                      )}
+                      {d.needs_review && (
+                        <span className="font-body rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+                          확인필요
                         </span>
                       )}
                     </span>
@@ -393,6 +434,29 @@ const DonationBoard = ({
 
                   {d.note && (
                     <p className="font-body mt-1 text-xs text-ink/60">{d.note}</p>
+                  )}
+
+                  {isAdmin && d.needs_review && (
+                    <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-amber-100/60 px-2 py-1.5">
+                      <span className="font-body text-xs text-amber-800">
+                        인증샷을 보고 실제 투자 횟수를 입력해주세요 →
+                      </span>
+                      <input
+                        type="number"
+                        min={0}
+                        defaultValue={d.invest_count}
+                        onBlur={(e) => {
+                          if (Number(e.target.value) !== d.invest_count) {
+                            handleFixCount(d.id, e.target.value);
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") e.currentTarget.blur();
+                        }}
+                        className="w-20 rounded-lg border border-amber-300 bg-white px-2 py-1 font-body text-sm text-ink"
+                      />
+                      <span className="font-body text-xs text-amber-800">회</span>
+                    </div>
                   )}
 
                   {d.image_url && (

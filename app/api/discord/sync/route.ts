@@ -8,6 +8,7 @@ import {
   fetchGuildNick,
   getChannelConfig,
   parseInvestCount,
+  parseMesoMan,
   pickDisplayName,
 } from "@/lib/discord";
 import { INVEST_UNIT_MAN } from "@/lib/donations";
@@ -17,6 +18,36 @@ import { getAuthUser } from "@/lib/supabase-server";
 export const maxDuration = 60;
 
 const IMAGE_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"];
+
+const hasImage = (message: DiscordMessage): boolean =>
+  message.attachments.some(
+    (a) => a.content_type && IMAGE_TYPES.includes(a.content_type)
+  );
+
+/**
+ * 메시지에서 투자 횟수를 판단한다.
+ * 1) "!투자 2" 양식 → 확정
+ * 2) "천만원 투자" 같은 금액 표현 → 추측 (길마 확인 필요)
+ * 3) 인증샷만 있음 → 0회 + 확인 필요
+ * 4) 그 외 잡담 → null (가져오지 않음)
+ */
+const resolveInvestCount = (
+  message: DiscordMessage
+): { count: number; needsReview: boolean } | null => {
+  const exact = parseInvestCount(message.content ?? "");
+  if (exact !== null) return { count: exact, needsReview: false };
+
+  // 투자 인증 채널이므로 인증샷이 있으면 기부 기록으로 본다
+  if (!hasImage(message)) return null;
+
+  const man = parseMesoMan(message.content ?? "");
+  if (man !== null) {
+    const guessed = Math.round(man / INVEST_UNIT_MAN);
+    if (guessed > 0) return { count: guessed, needsReview: true };
+  }
+
+  return { count: 0, needsReview: true };
+};
 
 // 디스코드 첨부 이미지는 URL이 만료되므로 Supabase Storage로 옮겨 영구 보관한다.
 const copyAttachmentToStorage = async (
@@ -87,6 +118,7 @@ export async function POST() {
     const nickCache = new Map<string, string | null>();
     let imported = 0;
     let skipped = 0;
+    let review = 0;
 
     for (const { guild, channelId } of channels) {
       const messages = await fetchChannelMessages(channelId);
@@ -95,11 +127,12 @@ export async function POST() {
         if (message.author.bot) continue;
         if (seen.has(message.id)) continue;
 
-        const count = parseInvestCount(message.content ?? "");
-        if (count === null) {
+        const resolved = resolveInvestCount(message);
+        if (resolved === null) {
           skipped += 1;
           continue;
         }
+        const { count, needsReview } = resolved;
 
         // 서버 닉네임 우선 (예: "전태영/저격수/104")
         if (!nickCache.has(message.author.id)) {
@@ -123,17 +156,21 @@ export async function POST() {
           discord_user_id: message.author.id,
           discord_name: fullNick,
           discord_message_id: message.id,
+          needs_review: needsReview,
           created_at: message.timestamp,
         });
 
         // 동시 실행 등으로 중복이면 무시
-        if (!error) imported += 1;
+        if (!error) {
+          imported += 1;
+          if (needsReview) review += 1;
+        }
       }
     }
 
     revalidatePath("/donations");
 
-    return NextResponse.json({ imported, skipped });
+    return NextResponse.json({ imported, skipped, review });
   } catch (error) {
     return NextResponse.json(
       {
