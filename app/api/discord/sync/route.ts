@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { isAdminUser } from "@/lib/admin";
 import {
   DiscordMessage,
+  extractGameNick,
   fetchChannelMessages,
   fetchGuildNick,
   getChannelConfig,
@@ -107,7 +108,9 @@ export async function POST() {
             message.member?.nick ?? (await fetchGuildNick(message.author.id))
           );
         }
-        const nickname = nickCache.get(message.author.id) ?? pickDisplayName(message);
+        const fullNick = nickCache.get(message.author.id) ?? pickDisplayName(message);
+        // 표에는 캐릭터명만 쓰고("전태영"), 원본 닉네임은 따로 보관한다
+        const nickname = extractGameNick(fullNick);
 
         const imageUrl = await copyAttachmentToStorage(message);
 
@@ -118,7 +121,7 @@ export async function POST() {
           amount_man: count * INVEST_UNIT_MAN,
           image_url: imageUrl,
           discord_user_id: message.author.id,
-          discord_name: nickname,
+          discord_name: fullNick,
           discord_message_id: message.id,
           created_at: message.timestamp,
         });
