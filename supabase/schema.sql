@@ -46,24 +46,40 @@ create table if not exists members (
   user_id uuid primary key references auth.users (id) on delete cascade,
   role text not null default 'sprout'
     check (role in ('master', 'submaster', 'staff', 'member', 'sprout')),
+  discord_user_id text,  -- 디스코드 계정 연결 (기부현황 등급 표시용)
   created_at timestamptz not null default now()
 );
+
+create unique index if not exists members_discord_user_id_key
+  on members (discord_user_id)
+  where discord_user_id is not null;
 
 -- 길드 기부현황 (길드 스킬 투자 기록)
 create table if not exists donations (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users (id) on delete set null,
   nickname text not null,
+  guild text not null default '카피',              -- 카피 / 카피랜드
   amount_man integer not null default 0 check (amount_man >= 0), -- 만 메소 단위
   invest_count integer not null default 1 check (invest_count >= 0),
   skill text,
   image_url text,
   note text,
+  -- 디스코드에서 가져온 기록
+  discord_user_id text,
+  discord_name text,
+  discord_message_id text,
   created_at timestamptz not null default now()
 );
 
 create index if not exists donations_created_at_idx on donations (created_at desc);
 create index if not exists donations_user_id_idx on donations (user_id);
+create index if not exists donations_guild_idx on donations (guild);
+
+-- 같은 디스코드 메시지를 두 번 가져오지 않도록 중복 방지
+create unique index if not exists donations_discord_message_id_key
+  on donations (discord_message_id)
+  where discord_message_id is not null;
 
 -- 이 프로젝트의 모든 읽기/쓰기는 서버(Route Handler)가
 -- SUPABASE_SERVICE_ROLE_KEY로 처리하므로 RLS를 켜서

@@ -1,6 +1,6 @@
 import DonationBoard from "@/components/DonationBoard";
-import { fetchDonations, summarize } from "@/lib/donations";
 import { isAdminUser } from "@/lib/admin";
+import { GuildName, fetchDonations, isGuildName, summarize } from "@/lib/donations";
 import { getAuthUser } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +9,13 @@ export const metadata = {
   title: "길드 기부현황",
 };
 
-const DonationsPage = async (): Promise<JSX.Element> => {
+type DonationsPageProps = {
+  searchParams: Promise<{ guild?: string }>;
+};
+
+const DonationsPage = async ({
+  searchParams,
+}: DonationsPageProps): Promise<JSX.Element> => {
   const user = await getAuthUser();
 
   if (!user) {
@@ -24,15 +30,21 @@ const DonationsPage = async (): Promise<JSX.Element> => {
     );
   }
 
+  const { guild: guildParam } = await searchParams;
+  const guild: GuildName = isGuildName(guildParam) ? guildParam : "카피";
+
   const [donations, isAdmin] = await Promise.all([
-    fetchDonations(),
+    fetchDonations(guild),
     isAdminUser(user.id),
   ]);
 
+  const summary = donations ? await summarize(donations) : null;
+
   return (
     <DonationBoard
-      initialDonations={donations}
-      summary={donations ? summarize(donations) : null}
+      guild={guild}
+      donations={donations}
+      summary={summary}
       currentUserId={user.id}
       isAdmin={isAdmin}
     />
