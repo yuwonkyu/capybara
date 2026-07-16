@@ -49,6 +49,22 @@ create table if not exists members (
   created_at timestamptz not null default now()
 );
 
+-- 길드 기부현황 (길드 스킬 투자 기록)
+create table if not exists donations (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users (id) on delete set null,
+  nickname text not null,
+  amount_man integer not null default 0 check (amount_man >= 0), -- 만 메소 단위
+  invest_count integer not null default 1 check (invest_count >= 0),
+  skill text,
+  image_url text,
+  note text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists donations_created_at_idx on donations (created_at desc);
+create index if not exists donations_user_id_idx on donations (user_id);
+
 -- 이 프로젝트의 모든 읽기/쓰기는 서버(Route Handler)가
 -- SUPABASE_SERVICE_ROLE_KEY로 처리하므로 RLS를 켜서
 -- 클라이언트(anon key)의 직접 접근은 막아둡니다.
@@ -56,6 +72,7 @@ alter table posts enable row level security;
 alter table comments enable row level security;
 alter table admins enable row level security;
 alter table members enable row level security;
+alter table donations enable row level security;
 
 -- 이미지 저장용 공개 버킷 (읽기는 공개, 업로드는 서버에서만 수행)
 insert into storage.buckets (id, name, public)
