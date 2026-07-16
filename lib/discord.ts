@@ -88,3 +88,30 @@ export const pickDisplayName = (message: DiscordMessage): string =>
   message.member?.nick ??
   message.author.global_name ??
   message.author.username;
+
+/**
+ * 길드 닉네임에서 게임 캐릭터명만 뽑아낸다.
+ * 길드 규칙이 "닉네임/직업/레벨" 이라 앞부분만 사용한다.
+ *
+ * "전태영/저격수/104"   → "전태영"
+ * "딘토 / 앜메 / 122"   → "딘토"
+ * "깹비 보마 162"       → "깹비"   (공백 구분 + 끝이 레벨 숫자인 경우)
+ * "친카피"              → "친카피" (구분자가 없으면 그대로)
+ */
+export const extractGameNick = (raw: string): string => {
+  const value = raw.trim();
+
+  // "닉네임/직업/레벨" (슬래시 앞뒤 공백 허용)
+  if (value.includes("/")) {
+    const first = value.split("/")[0].trim();
+    if (first) return first;
+  }
+
+  // "닉네임 직업 레벨" 처럼 공백으로만 구분한 경우 (마지막이 레벨 숫자)
+  const parts = value.split(/\s+/);
+  if (parts.length >= 3 && /^\d{1,3}$/.test(parts[parts.length - 1])) {
+    return parts[0];
+  }
+
+  return value;
+};
