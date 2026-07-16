@@ -14,6 +14,7 @@ const NAV_LINKS = [
     label: board.label,
     external: Boolean(board.externalUrl),
   })),
+  { href: "/donations", label: "기부현황", external: false },
 ];
 
 const Header = (): JSX.Element => {
