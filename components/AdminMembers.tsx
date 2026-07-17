@@ -25,12 +25,19 @@ const AdminMembers = ({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // 등급 배지를 눌러 해당 등급만 골라 본다 (null이면 전체)
+  const [filterRole, setFilterRole] = useState<MemberRole | null>(null);
 
   const counts = useMemo(() => {
     const map = new Map<MemberRole, number>();
     for (const m of members) map.set(m.role, (map.get(m.role) ?? 0) + 1);
     return map;
   }, [members]);
+
+  const visibleMembers = useMemo(
+    () => (filterRole ? members.filter((m) => m.role === filterRole) : members),
+    [members, filterRole]
+  );
 
   const handleRoleChange = async (userId: string, role: MemberRole) => {
     setError(null);
@@ -90,21 +97,58 @@ const AdminMembers = ({
       </p>
 
       <div className="mt-3 flex flex-wrap gap-2">
-        {ROLE_ORDER.map((role) => (
-          <span
-            key={role}
-            className={`font-body rounded-full px-3 py-1 text-xs font-semibold ${roleBadgeClass[role]}`}
-          >
-            {ROLE_LABELS[role]} {counts.get(role) ?? 0}
-          </span>
-        ))}
+        <button
+          type="button"
+          onClick={() => setFilterRole(null)}
+          className={`font-body rounded-full px-3 py-1 text-xs font-semibold transition ${
+            filterRole === null
+              ? "bg-mintdeep text-white"
+              : "border border-sand bg-white text-ink/60 hover:bg-cream"
+          }`}
+        >
+          전체 {members.length}
+        </button>
+
+        {ROLE_ORDER.map((role) => {
+          const selected = filterRole === role;
+          return (
+            <button
+              key={role}
+              type="button"
+              // 같은 등급을 다시 누르면 전체로 돌아온다
+              onClick={() => setFilterRole(selected ? null : role)}
+              className={`font-body rounded-full px-3 py-1 text-xs font-semibold transition ${
+                roleBadgeClass[role]
+              } ${
+                selected
+                  ? "ring-2 ring-mintdeep ring-offset-1"
+                  : "opacity-70 hover:opacity-100"
+              }`}
+            >
+              {ROLE_LABELS[role]} {counts.get(role) ?? 0}
+            </button>
+          );
+        })}
       </div>
 
       {error && <p className="font-body mt-3 text-sm text-red-500">{error}</p>}
       {notice && <p className="font-body mt-3 text-sm text-mintdeep">{notice}</p>}
 
+      {filterRole && (
+        <p className="font-body mt-3 text-xs text-ink/50">
+          <b className="text-mintdeep">{ROLE_LABELS[filterRole]}</b> 등급만 보는
+          중이에요. 배지를 다시 누르면 전체가 보입니다.
+        </p>
+      )}
+
       <div className="mt-4 space-y-2">
-        {members.map((member) => {
+        {visibleMembers.length === 0 && (
+          <p className="font-body p-6 text-center text-sm text-ink/50">
+            해당 등급의 길드원이 없어요.
+          </p>
+        )}
+
+        {visibleMembers.map((member) => {
           const isSelf = member.userId === currentUserId;
           return (
             <div
