@@ -42,6 +42,9 @@ const DonationBoard = ({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // 집계표는 인원이 많으면 길어져서 접을 수 있게 한다
+  const [tableOpen, setTableOpen] = useState(true);
+
   // 투자 횟수 인라인 수정 (실수 방지를 위해 자동 저장 대신 명시적으로 저장)
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editCount, setEditCount] = useState("0");
@@ -354,50 +357,76 @@ const DonationBoard = ({
       {/* 길마용 엑셀 표 */}
       {summary && summary.rows.length > 0 && (
         <section className="cute-card">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="title mb-0">{guild} 길드 기부 집계</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            {/* 제목 전체를 눌러 접었다 펼 수 있게 한다 */}
+            <button
+              type="button"
+              onClick={() => setTableOpen((v) => !v)}
+              className="flex items-center gap-2"
+              aria-expanded={tableOpen}
+            >
+              <span
+                className={`font-body text-sm text-mintdeep transition-transform ${
+                  tableOpen ? "rotate-90" : ""
+                }`}
+                aria-hidden
+              >
+                ▶
+              </span>
+              <span className="title mb-0">{guild} 길드 기부 집계</span>
+              <span className="font-body text-xs text-ink/45">
+                {summary.rows.length}명
+              </span>
+            </button>
+
             <button type="button" onClick={handleDownloadCsv} className="btn-secondary">
               엑셀(CSV) 다운로드
             </button>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse font-body text-sm">
-              <thead>
-                <tr className="border-b-2 border-mintdeep/30 bg-mint/20 text-left text-xs text-ink/70">
-                  <th className="px-3 py-2 font-semibold">아이디</th>
-                  <th className="px-3 py-2 font-semibold">투자횟수</th>
-                  <th className="px-3 py-2 font-semibold">회원등급</th>
-                </tr>
-              </thead>
-              <tbody>
-                {summary.rows.map((row) => (
-                  <tr key={row.nickname} className="border-b border-sand/60">
-                    <td className="px-3 py-2 text-ink">{row.nickname}</td>
-                    <td className="px-3 py-2 font-semibold text-mintdeep">
-                      {row.totalCount}회
-                    </td>
-                    <td className="px-3 py-2 text-ink/70">
-                      {row.role ? (
-                        ROLE_LABELS[row.role]
-                      ) : (
-                        <span className="text-ink/35">미연동</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {reviewCount > 0 && (
-            <p className="font-body mt-2 text-xs text-amber-700">
-              ⚠️ 아래 최근 기부 내역에 <b>확인필요 {reviewCount}건</b>이 있어요. 횟수를
-              확정해야 집계가 정확해집니다.
-            </p>
+          {tableOpen && (
+            <>
+              {/* 표가 길어도 페이지가 늘어나지 않도록 안에서 스크롤 (헤더 고정) */}
+              <div className="mt-3 max-h-[420px] overflow-auto rounded-xl border border-sand/70">
+                <table className="w-full border-collapse font-body text-sm">
+                  <thead className="sticky top-0 z-10">
+                    <tr className="border-b-2 border-mintdeep/30 bg-mint/90 text-left text-xs text-ink/70 backdrop-blur">
+                      <th className="px-3 py-2 font-semibold">아이디</th>
+                      <th className="px-3 py-2 font-semibold">투자횟수</th>
+                      <th className="px-3 py-2 font-semibold">회원등급</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {summary.rows.map((row) => (
+                      <tr key={row.nickname} className="border-b border-sand/60">
+                        <td className="px-3 py-2 text-ink">{row.nickname}</td>
+                        <td className="px-3 py-2 font-semibold text-mintdeep">
+                          {row.totalCount}회
+                        </td>
+                        <td className="px-3 py-2 text-ink/70">
+                          {row.role ? (
+                            ROLE_LABELS[row.role]
+                          ) : (
+                            <span className="text-ink/35">미연동</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {reviewCount > 0 && (
+                <p className="font-body mt-2 text-xs text-amber-700">
+                  ⚠️ 아래 최근 기부 내역에 <b>확인필요 {reviewCount}건</b>이 있어요.
+                  횟수를 확정해야 집계가 정확해집니다.
+                </p>
+              )}
+              <p className="font-body mt-2 text-xs text-ink/40">
+                회원등급은 디스코드 계정과 사이트 계정이 연결된 경우에만 표시됩니다.
+              </p>
+            </>
           )}
-          <p className="font-body mt-2 text-xs text-ink/40">
-            회원등급은 디스코드 계정과 사이트 계정이 연결된 경우에만 표시됩니다.
-          </p>
         </section>
       )}
 
