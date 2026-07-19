@@ -160,7 +160,7 @@ const PostForm = ({
 
       {needsCategory && (
         <div>
-          <label className="font-body mb-1 block text-sm text-ink/70">말머리</label>
+          <label className="font-body mb-1 block text-sm text-ink/70">카테고리</label>
           <div className="flex flex-wrap gap-2">
             {categories?.map((c) => (
               <button

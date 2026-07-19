@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (!isValidCategory(board_type, category)) {
-    return NextResponse.json({ error: "말머리를 선택해주세요." }, { status: 400 });
+    return NextResponse.json({ error: "카테고리를 선택해주세요." }, { status: 400 });
   }
 
   if (getBoardConfig(board_type)?.externalUrl) {
