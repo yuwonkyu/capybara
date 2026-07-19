@@ -174,7 +174,7 @@ export const summarize = async (
 /**
  * 누적 기부액(전 길드 합산)에 따라 회원 등급을 재계산한다.
  * 5천만 이상 → 카피바라, 1천만 이상 → 카피, 그 외 → 새싹.
- * 길드마스터/부마스터/STAFF 등 관리자 등급은 건드리지 않는다.
+ * 길드마스터/부마스터 등 관리자 등급은 건드리지 않는다.
  * 기부 등록·수정·삭제, 디스코드 동기화 뒤에 호출한다.
  */
 export const syncDonationRoles = async (): Promise<{ updated: number }> => {
