@@ -69,6 +69,44 @@ export const fetchDonations = async (
   }
 };
 
+export type TopDonor = { nickname: string; totalCount: number };
+
+// 홈 노출용: 길드별 기부 TOP N (닉네임 기준 투자 횟수 합산).
+// 등급 매핑 없이 가볍게 집계한다.
+export const fetchTopDonors = async (
+  guild: GuildName,
+  limit = 3
+): Promise<TopDonor[]> => {
+  try {
+    const supabase = getSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("donations")
+      .select("nickname, invest_count, discord_user_id, user_id")
+      .eq("guild", guild)
+      .limit(1000);
+
+    if (error) throw error;
+
+    const map = new Map<string, TopDonor>();
+    for (const d of data ?? []) {
+      const key =
+        (d.discord_user_id as string) ??
+        (d.user_id as string) ??
+        (d.nickname as string);
+      const prev = map.get(key) ?? { nickname: d.nickname as string, totalCount: 0 };
+      prev.totalCount += (d.invest_count as number) ?? 0;
+      map.set(key, prev);
+    }
+
+    return [...map.values()]
+      .filter((d) => d.totalCount > 0)
+      .sort((a, b) => b.totalCount - a.totalCount)
+      .slice(0, limit);
+  } catch {
+    return [];
+  }
+};
+
 // 디스코드 계정 ↔ 사이트 회원등급 매핑을 가져온다.
 const fetchRoleMap = async (): Promise<{
   byDiscord: Map<string, MemberRole>;

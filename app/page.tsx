@@ -1,8 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
+import DonationRankings from "@/components/DonationRankings";
 import LatestPosts from "@/components/LatestPosts";
 import PopularPosts from "@/components/PopularPosts";
 import ShortcutLinks from "@/components/ShortcutLinks";
+import { fetchTopDonors } from "@/lib/donations";
 import { GAME_INFO_LINKS } from "@/lib/links";
 import { fetchBoardPosts, fetchPopularPosts } from "@/lib/posts";
 import { BOARD_TYPES } from "@/lib/types";
@@ -16,29 +18,12 @@ const highlights = [
   "치지직과 유튜브에서 활동 중",
 ];
 
-const ExternalIcon = (): JSX.Element => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden
-    className="inline-block"
-  >
-    <path d="M15 3h6v6" />
-    <path d="M10 14 21 3" />
-    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-  </svg>
-);
-
 const Home = async (): Promise<JSX.Element> => {
-  const [notices, popular] = await Promise.all([
+  const [notices, popular, capyTop, capylandTop] = await Promise.all([
     fetchBoardPosts("notice", 5),
     fetchPopularPosts(5),
+    fetchTopDonors("카피", 3),
+    fetchTopDonors("카피랜드", 3),
   ]);
 
   return (
@@ -89,43 +74,29 @@ const Home = async (): Promise<JSX.Element> => {
         </div>
       </section>
 
-      <section className="mb-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
-        {BOARD_TYPES.map((board) =>
-          board.externalUrl ? (
-            <a
-              key={board.type}
-              href={board.externalUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="cute-card block p-4 transition hover:-translate-y-1 sm:p-5"
-            >
-              <p className="font-display text-lg text-mintdeep flex items-center gap-1.5 sm:text-xl">
-                {board.label}
-                <ExternalIcon />
-              </p>
-              <p className="font-body mt-1 flex items-center gap-1 text-xs text-mintdeep/80 sm:text-sm">
-                업데이트 보러가기
-                <ExternalIcon />
-              </p>
-            </a>
-          ) : (
-            <Link
-              key={board.type}
-              href={`/board/${board.type}`}
-              className="cute-card block p-4 transition hover:-translate-y-1 sm:p-5"
-            >
-              <p className="font-display text-lg text-mintdeep sm:text-xl">{board.label}</p>
-              <p className="font-body mt-1 line-clamp-2 text-xs text-ink/60 sm:text-sm">
-                {board.description}
-              </p>
-            </Link>
-          )
-        )}
+      <section className="mb-5 grid grid-cols-2 gap-2.5 sm:gap-3">
+        {BOARD_TYPES.map((board) => (
+          <Link
+            key={board.type}
+            href={`/board/${board.type}`}
+            className="cute-card block p-4 transition hover:-translate-y-1 sm:p-5"
+          >
+            <p className="font-display text-lg text-mintdeep sm:text-xl">{board.label}</p>
+            <p className="font-body mt-1 line-clamp-2 text-xs text-ink/60 sm:text-sm">
+              {board.description}
+            </p>
+          </Link>
+        ))}
       </section>
 
       <section className="mb-5 grid gap-4 md:grid-cols-2">
         <LatestPosts board="notice" title="최근 공지" posts={notices} />
         <PopularPosts posts={popular} />
+      </section>
+
+      <section className="mb-5 grid gap-4 md:grid-cols-2">
+        <DonationRankings guild="카피" donors={capyTop} />
+        <DonationRankings guild="카피랜드" donors={capylandTop} />
       </section>
 
       <section className="mb-5 cute-card">

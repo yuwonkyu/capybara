@@ -15,30 +15,9 @@ export const BOARD_TYPES: BoardConfig[] = [
     description: "길드 운영진이 전달하는 공지를 확인하세요.",
   },
   {
-    type: "update",
-    label: "업데이트",
-    description: "메이플 플래닛 공식 업데이트 소식은 외부 사이트에서 확인하세요.",
-    externalUrl: "https://mapleplanet.co.kr/board/update",
-  },
-  {
     type: "free",
-    label: "자유게시판",
-    description: "길드원들의 자유로운 이야기 공간이에요.",
-  },
-  {
-    type: "guide",
-    label: "공략",
-    description: "보스·사냥터 공략과 팁을 공유해요.",
-  },
-  {
-    type: "hunt",
-    label: "파티",
-    description: "사냥·보스 파티 모집은 여기에!",
-  },
-  {
-    type: "share",
-    label: "거래",
-    description: "아이템 나눔·요청·판매를 위한 거래 공간이에요.",
+    label: "게시판",
+    description: "자유·공략·파티·거래를 말머리로 나눠 이야기해요.",
   },
 ];
 
@@ -49,8 +28,7 @@ export const ADMIN_ONLY_BOARDS: BoardType[] = ["notice"];
 
 // 게시판별 말머리 목록 (여기 등록된 게시판만 말머리 사용)
 export const BOARD_CATEGORIES: Partial<Record<BoardType, readonly string[]>> = {
-  hunt: ["사냥", "보스", "쩔"],
-  share: ["나눔", "요청", "판매"],
+  free: ["자유", "공략", "파티", "거래"],
 };
 
 export const CATEGORY_BOARDS = Object.keys(BOARD_CATEGORIES) as BoardType[];
