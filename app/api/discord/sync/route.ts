@@ -11,7 +11,7 @@ import {
   parseMesoMan,
   pickDisplayName,
 } from "@/lib/discord";
-import { INVEST_UNIT_MAN } from "@/lib/donations";
+import { INVEST_UNIT_MAN, syncDonationRoles } from "@/lib/donations";
 import { getSupabaseServerClient } from "@/lib/supabase";
 import { getAuthUser } from "@/lib/supabase-server";
 
@@ -171,6 +171,7 @@ export async function POST() {
       }
     }
 
+    await syncDonationRoles();
     revalidatePath("/donations");
 
     return NextResponse.json({ imported, skipped, review });

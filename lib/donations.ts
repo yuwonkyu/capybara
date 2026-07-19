@@ -1,5 +1,5 @@
 import { getSupabaseServerClient } from "@/lib/supabase";
-import { MemberRole } from "@/lib/types";
+import { DONATION_TIER_ROLES, MemberRole, donationTierRole } from "@/lib/types";
 
 // 길드 스킬 투자 1회당 기부 메소 (고정)
 export const INVEST_UNIT_MAN = 500;
@@ -169,6 +169,62 @@ export const summarize = async (
     donorCount: rows.length,
     rows,
   };
+};
+
+/**
+ * 누적 기부액(전 길드 합산)에 따라 회원 등급을 재계산한다.
+ * 5천만 이상 → 카피바라, 1천만 이상 → 카피, 그 외 → 새싹.
+ * 길드마스터/부마스터/STAFF 등 관리자 등급은 건드리지 않는다.
+ * 기부 등록·수정·삭제, 디스코드 동기화 뒤에 호출한다.
+ */
+export const syncDonationRoles = async (): Promise<{ updated: number }> => {
+  try {
+    const supabase = getSupabaseServerClient();
+
+    const [{ data: donations }, { data: members }] = await Promise.all([
+      supabase.from("donations").select("user_id, discord_user_id, amount_man"),
+      supabase.from("members").select("user_id, role, discord_user_id"),
+    ]);
+
+    if (!members) return { updated: 0 };
+
+    const discordToUser = new Map<string, string>(
+      members
+        .filter((m) => m.discord_user_id)
+        .map((m) => [m.discord_user_id as string, m.user_id as string])
+    );
+
+    // 사이트 계정(user_id) 기준으로 총 기부액을 합산한다.
+    // 디스코드 전용 기록은 discord_user_id가 연결된 계정에만 반영된다.
+    const totals = new Map<string, number>();
+    for (const d of donations ?? []) {
+      const uid =
+        (d.user_id as string | null) ??
+        (d.discord_user_id ? discordToUser.get(d.discord_user_id as string) : undefined);
+      if (!uid) continue;
+      totals.set(uid, (totals.get(uid) ?? 0) + ((d.amount_man as number) ?? 0));
+    }
+
+    let updated = 0;
+    for (const m of members) {
+      const role = m.role as MemberRole;
+      if (!DONATION_TIER_ROLES.includes(role)) continue; // 관리자 등급은 건너뜀
+
+      const nextRole = donationTierRole(totals.get(m.user_id as string) ?? 0);
+      if (nextRole === role) continue;
+
+      const { error } = await supabase
+        .from("members")
+        .update({ role: nextRole })
+        .eq("user_id", m.user_id);
+
+      if (!error) updated += 1;
+    }
+
+    return { updated };
+  } catch {
+    return { updated: 0 };
+  }
 };
 
 // 만 메소를 읽기 좋게 표시 (예: 12,345만 / 1억 2,345만)

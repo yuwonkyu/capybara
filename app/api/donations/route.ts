@@ -1,6 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
-import { INVEST_UNIT_MAN, isGuildName } from "@/lib/donations";
+import { INVEST_UNIT_MAN, isGuildName, syncDonationRoles } from "@/lib/donations";
 import { getSupabaseServerClient } from "@/lib/supabase";
 import { getAuthUser } from "@/lib/supabase-server";
 import { getDisplayName } from "@/lib/user";
@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
 
     if (error) throw error;
 
+    await syncDonationRoles();
     revalidatePath("/donations");
 
     return NextResponse.json({ id: data.id }, { status: 201 });
