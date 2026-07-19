@@ -89,7 +89,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     if (!isValidCategory(post.board_type, category)) {
-      return NextResponse.json({ error: "말머리를 선택해주세요." }, { status: 400 });
+      return NextResponse.json({ error: "카테고리를 선택해주세요." }, { status: 400 });
     }
 
     const { error: updateError } = await supabase

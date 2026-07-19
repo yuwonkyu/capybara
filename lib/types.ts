@@ -17,7 +17,7 @@ export const BOARD_TYPES: BoardConfig[] = [
   {
     type: "free",
     label: "게시판",
-    description: "자유·공략·파티·거래를 말머리로 나눠 이야기해요.",
+    description: "자유·공략·파티·거래 메뉴로 나눠 이야기해요.",
   },
 ];
 
