@@ -39,6 +39,7 @@ const DonationBoard = ({
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -186,26 +187,28 @@ const DonationBoard = ({
     }
   };
 
-  // 길마가 엑셀에 붙여넣을 수 있도록 CSV로 내려받는다 (엑셀 한글 깨짐 방지 BOM 포함)
-  const handleDownloadCsv = () => {
-    if (!summary) return;
-    const header = ["아이디", "투자횟수", "회원등급"];
-    const rows = summary.rows.map((r) => [
-      r.nickname,
-      String(r.totalCount),
-      r.role ? ROLE_LABELS[r.role] : "미연동",
-    ]);
-    const csv = [header, ...rows]
-      .map((cols) => cols.map((c) => `"${c.replace(/"/g, '""')}"`).join(","))
-      .join("\r\n");
-
-    const blob = new Blob([`﻿${csv}`], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${guild}_길드기부현황.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  // 카피·카피랜드를 각각 시트로 담은 엑셀 파일을 서버에서 만들어 내려받는다.
+  const handleDownloadExcel = async () => {
+    setError(null);
+    setExporting(true);
+    try {
+      const res = await fetch("/api/donations/export");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "엑셀 파일을 만들지 못했습니다.");
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "길드기부현황.xlsx";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "엑셀 파일을 만들지 못했습니다.");
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -379,8 +382,13 @@ const DonationBoard = ({
               </span>
             </button>
 
-            <button type="button" onClick={handleDownloadCsv} className="btn-secondary">
-              엑셀(CSV) 다운로드
+            <button
+              type="button"
+              onClick={handleDownloadExcel}
+              className="btn-secondary"
+              disabled={exporting}
+            >
+              {exporting ? "만드는 중..." : "엑셀 다운로드 (카피+카피랜드)"}
             </button>
           </div>
 
