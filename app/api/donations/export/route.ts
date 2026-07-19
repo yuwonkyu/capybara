@@ -1,15 +1,23 @@
 import { NextResponse } from "next/server";
 import * as XLSX from "xlsx";
+import { isAdminUser } from "@/lib/admin";
 import { GUILDS, fetchDonations, summarize } from "@/lib/donations";
 import { getAuthUser } from "@/lib/supabase-server";
 import { ROLE_LABELS } from "@/lib/types";
 
 // 카피/카피랜드를 각각 시트로 담은 엑셀(.xlsx) 파일을 생성한다.
 // (CSV는 시트 개념이 없어 길드별로 탭을 나눌 수 없다)
+// 전체 회원의 등급·투자 내역이 파일로 나가는 기능이라 관리자 전용으로 제한한다.
 export async function GET() {
   const user = await getAuthUser();
   if (!user) {
     return NextResponse.json({ error: "카카오 로그인이 필요합니다." }, { status: 401 });
+  }
+  if (!(await isAdminUser(user.id))) {
+    return NextResponse.json(
+      { error: "엑셀 다운로드는 관리자만 이용할 수 있어요." },
+      { status: 403 }
+    );
   }
 
   try {

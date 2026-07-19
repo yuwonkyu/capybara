@@ -12,7 +12,6 @@ type AdminMembersProps = {
 const roleBadgeClass: Record<MemberRole, string> = {
   master: "bg-mint text-mintdeep",
   submaster: "bg-sky/50 text-skydeep",
-  staff: "bg-sky/30 text-skydeep",
   veteran: "bg-amber-100 text-amber-700",
   member: "bg-cream text-ink/70",
   sprout: "bg-sand/40 text-ink/60",

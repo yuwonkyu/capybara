@@ -45,7 +45,7 @@ create table if not exists admins (
 create table if not exists members (
   user_id uuid primary key references auth.users (id) on delete cascade,
   role text not null default 'sprout'
-    check (role in ('master', 'submaster', 'staff', 'veteran', 'member', 'sprout')),
+    check (role in ('master', 'submaster', 'veteran', 'member', 'sprout')),
   discord_user_id text,  -- 디스코드 계정 연결 (기부현황 등급 표시용)
   created_at timestamptz not null default now()
 );

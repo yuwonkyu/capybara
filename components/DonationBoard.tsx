@@ -382,14 +382,16 @@ const DonationBoard = ({
               </span>
             </button>
 
-            <button
-              type="button"
-              onClick={handleDownloadExcel}
-              className="btn-secondary"
-              disabled={exporting}
-            >
-              {exporting ? "만드는 중..." : "엑셀 다운로드 (카피+카피랜드)"}
-            </button>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={handleDownloadExcel}
+                className="btn-secondary"
+                disabled={exporting}
+              >
+                {exporting ? "만드는 중..." : "엑셀 다운로드 (카피+카피랜드)"}
+              </button>
+            )}
           </div>
 
           {tableOpen && (

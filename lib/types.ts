@@ -46,7 +46,6 @@ export const isValidCategory = (
 export type MemberRole =
   | "master"
   | "submaster"
-  | "staff"
   | "veteran"
   | "member"
   | "sprout";
@@ -54,7 +53,6 @@ export type MemberRole =
 export const ROLE_LABELS: Record<MemberRole, string> = {
   master: "길드마스터",
   submaster: "부마스터",
-  staff: "STAFF",
   veteran: "카피바라",
   member: "카피",
   sprout: "새싹",
@@ -63,14 +61,13 @@ export const ROLE_LABELS: Record<MemberRole, string> = {
 export const ROLE_ORDER: MemberRole[] = [
   "master",
   "submaster",
-  "staff",
   "veteran",
   "member",
   "sprout",
 ];
 
 // 공지 작성·글 관리 권한을 가진 등급
-export const ADMIN_ROLES: MemberRole[] = ["master", "submaster", "staff"];
+export const ADMIN_ROLES: MemberRole[] = ["master", "submaster"];
 
 // 기부액으로 자동 조정되는 등급 (관리자 등급은 자동 조정 대상에서 제외)
 export const DONATION_TIER_ROLES: MemberRole[] = ["veteran", "member", "sprout"];
