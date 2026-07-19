@@ -43,13 +43,20 @@ export const isValidCategory = (
 };
 
 // 회원 등급 (권한 높은 순)
-export type MemberRole = "master" | "submaster" | "staff" | "member" | "sprout";
+export type MemberRole =
+  | "master"
+  | "submaster"
+  | "staff"
+  | "veteran"
+  | "member"
+  | "sprout";
 
 export const ROLE_LABELS: Record<MemberRole, string> = {
   master: "길드마스터",
   submaster: "부마스터",
   staff: "STAFF",
-  member: "친절한카피",
+  veteran: "카피바라",
+  member: "카피",
   sprout: "새싹",
 };
 
@@ -57,12 +64,24 @@ export const ROLE_ORDER: MemberRole[] = [
   "master",
   "submaster",
   "staff",
+  "veteran",
   "member",
   "sprout",
 ];
 
 // 공지 작성·글 관리 권한을 가진 등급
 export const ADMIN_ROLES: MemberRole[] = ["master", "submaster", "staff"];
+
+// 기부액으로 자동 조정되는 등급 (관리자 등급은 자동 조정 대상에서 제외)
+export const DONATION_TIER_ROLES: MemberRole[] = ["veteran", "member", "sprout"];
+
+// 누적 투자 금액(만 메소)에 따른 등급 산정
+// 5천만 이상 → 카피바라 / 1천만 이상 → 카피 / 그 외 → 새싹
+export const donationTierRole = (totalMan: number): MemberRole => {
+  if (totalMan >= 5000) return "veteran";
+  if (totalMan >= 1000) return "member";
+  return "sprout";
+};
 
 export type Post = {
   id: string;

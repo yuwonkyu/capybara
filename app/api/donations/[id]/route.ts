@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminUser } from "@/lib/admin";
-import { INVEST_UNIT_MAN } from "@/lib/donations";
+import { INVEST_UNIT_MAN, syncDonationRoles } from "@/lib/donations";
 import { getSupabaseServerClient } from "@/lib/supabase";
 import { getAuthUser } from "@/lib/supabase-server";
 
@@ -47,6 +47,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     if (error) throw error;
 
+    await syncDonationRoles();
     revalidatePath("/donations");
 
     return NextResponse.json({ ok: true });
@@ -94,6 +95,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
       .eq("id", id);
     if (deleteError) throw deleteError;
 
+    await syncDonationRoles();
     revalidatePath("/donations");
 
     return NextResponse.json({ ok: true });
