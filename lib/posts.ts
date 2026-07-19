@@ -28,10 +28,8 @@ const SUMMARY_FIELDS = "id, title, nickname, category, views, created_at, commen
 const SUMMARY_FIELDS_WITH_BOARD =
   "id, board_type, title, nickname, category, views, created_at, comments(count)";
 
-// 인기 게시글: 자유·공략·거래 게시판에서 조회수 높은 순으로 모은다.
-// (파티 게시판은 모집글 특성상 인기 게시글에서 제외)
-const POPULAR_BOARDS: BoardType[] = ["free", "guide", "share"];
-
+// 인기 게시글: 게시판(free)에서 조회수 높은 순으로 모은다.
+// (파티 말머리는 모집글 특성상 인기 게시글에서 제외)
 export const fetchPopularPosts = async (
   limit = 5
 ): Promise<PopularPost[] | null> => {
@@ -40,7 +38,8 @@ export const fetchPopularPosts = async (
     const { data, error } = await supabase
       .from("posts")
       .select(SUMMARY_FIELDS_WITH_BOARD)
-      .in("board_type", POPULAR_BOARDS)
+      .eq("board_type", "free")
+      .or("category.is.null,category.neq.파티")
       .order("views", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(limit);

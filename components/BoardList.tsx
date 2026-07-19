@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { formatDate } from "@/lib/format";
 import { PostSummary } from "@/lib/posts";
-import { BoardConfig, isRecentPost } from "@/lib/types";
+import { BOARD_CATEGORIES, BoardConfig, isRecentPost } from "@/lib/types";
 
 type BoardListProps = {
   board: BoardConfig;
@@ -13,18 +13,23 @@ type BoardListProps = {
 
 const BoardList = ({ board, posts }: BoardListProps): JSX.Element => {
   const [keyword, setKeyword] = useState("");
+  const [category, setCategory] = useState<string | null>(null);
+
+  const categories = BOARD_CATEGORIES[board.type];
 
   const filtered = useMemo(() => {
     if (!posts) return posts;
     const kw = keyword.trim().toLowerCase();
-    if (!kw) return posts;
-    return posts.filter(
-      (p) =>
+    return posts.filter((p) => {
+      if (category && p.category !== category) return false;
+      if (!kw) return true;
+      return (
         p.title.toLowerCase().includes(kw) ||
         (p.category?.toLowerCase().includes(kw) ?? false) ||
         p.nickname.toLowerCase().includes(kw)
-    );
-  }, [posts, keyword]);
+      );
+    });
+  }, [posts, keyword, category]);
 
   return (
     <section className="cute-card">
@@ -39,6 +44,36 @@ const BoardList = ({ board, posts }: BoardListProps): JSX.Element => {
           </Link>
         )}
       </div>
+
+      {categories && posts && posts.length > 0 && (
+        <div className="mb-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setCategory(null)}
+            className={`font-body rounded-full px-3.5 py-1.5 text-sm transition ${
+              category === null
+                ? "bg-mintdeep font-semibold text-white"
+                : "border border-sand bg-white text-ink/60 hover:bg-cream"
+            }`}
+          >
+            전체
+          </button>
+          {categories.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => setCategory(category === c ? null : c)}
+              className={`font-body rounded-full px-3.5 py-1.5 text-sm transition ${
+                category === c
+                  ? "bg-mint font-semibold text-mintdeep"
+                  : "border border-sand bg-white text-ink/60 hover:bg-cream"
+              }`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
 
       {posts && posts.length > 0 && (
         <div className="mb-3">
@@ -67,7 +102,9 @@ const BoardList = ({ board, posts }: BoardListProps): JSX.Element => {
 
       {filtered && posts && posts.length > 0 && filtered.length === 0 && (
         <p className="font-body p-6 text-center text-sm text-ink/50">
-          &lsquo;{keyword}&rsquo; 검색 결과가 없어요.
+          {keyword.trim()
+            ? `‘${keyword}’ 검색 결과가 없어요.`
+            : `${category ?? ""} 게시글이 없어요.`}
         </p>
       )}
 

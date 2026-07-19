@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { PopularPost } from "@/lib/posts";
-import { getBoardConfig, isRecentPost } from "@/lib/types";
+import { isRecentPost } from "@/lib/types";
 
 type PopularPostsProps = {
   posts: PopularPost[] | null;
@@ -24,7 +24,6 @@ const PopularPosts = ({ posts }: PopularPostsProps): JSX.Element => {
       {posts && posts.length > 0 && (
         <ul className="space-y-2">
           {posts.map((post) => {
-            const label = getBoardConfig(post.board_type)?.label ?? "";
             return (
               <li key={post.id}>
                 <Link
@@ -32,9 +31,11 @@ const PopularPosts = ({ posts }: PopularPostsProps): JSX.Element => {
                   className="list-item flex items-center justify-between gap-2"
                 >
                   <span className="flex min-w-0 items-center gap-1.5">
-                    <span className="shrink-0 font-body text-[11px] font-semibold text-skydeep">
-                      [{label}]
-                    </span>
+                    {post.category && (
+                      <span className="shrink-0 font-body text-[11px] font-semibold text-skydeep">
+                        [{post.category}]
+                      </span>
+                    )}
                     <span className="truncate font-body text-sm text-ink">
                       {isRecentPost(post.created_at) && "✨ "}
                       {post.title}
