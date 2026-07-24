@@ -33,6 +33,30 @@ export async function POST(request: NextRequest) {
 
   try {
     const supabase = getSupabaseServerClient();
+
+    // 연타·중복 클릭으로 같은 내용이 다시 등록되는 것을 막는다
+    // (같은 사람이 같은 길드·횟수로 2분 이내에 또 등록하면 거부)
+    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+    const { data: recent } = await supabase
+      .from("donations")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("guild", guild)
+      .eq("invest_count", count)
+      .gte("created_at", twoMinutesAgo)
+      .limit(1)
+      .maybeSingle();
+
+    if (recent) {
+      return NextResponse.json(
+        {
+          error:
+            "방금 같은 내용으로 등록하셨어요. 중복 등록을 막기 위해 2분 뒤 다시 시도해주세요.",
+        },
+        { status: 409 }
+      );
+    }
+
     const { data, error } = await supabase
       .from("donations")
       .insert({
