@@ -33,6 +33,7 @@ const DonationBoard = ({
 }: DonationBoardProps): JSX.Element => {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [entryNickname, setEntryNickname] = useState("");
   const [investCount, setInvestCount] = useState("1");
   const [note, setNote] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -103,6 +104,7 @@ const DonationBoard = ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           guild,
+          nickname: entryNickname,
           invest_count: Number(investCount || 0),
           image_url: imageUrl,
           note,
@@ -111,6 +113,7 @@ const DonationBoard = ({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "기부 등록에 실패했습니다.");
 
+      setEntryNickname("");
       setInvestCount("1");
       setNote("");
       setImageUrl(null);
@@ -240,13 +243,15 @@ const DonationBoard = ({
                 {syncing ? "동기화 중..." : "디스코드 동기화"}
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => setOpen((v) => !v)}
-              className="btn-primary"
-            >
-              {open ? "닫기" : "직접 등록"}
-            </button>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                className="btn-primary"
+              >
+                {open ? "닫기" : "직접 등록"}
+              </button>
+            )}
           </div>
         </div>
 
@@ -293,15 +298,33 @@ const DonationBoard = ({
         {message && <p className="font-body mt-3 text-sm text-mintdeep">{message}</p>}
         {error && <p className="font-body mt-3 text-sm text-red-500">{error}</p>}
 
-        {open && (
+        {isAdmin && open && (
           <form
             onSubmit={handleSubmit}
             className="mt-4 space-y-3 border-t border-sand/60 pt-4"
           >
             <p className="font-body text-xs text-ink/50">
-              디스코드에 올리지 못했을 때만 사용하세요. 보통은 디스코드에{" "}
-              <b>!투자 2</b> + 인증샷을 올리면 자동으로 집계됩니다.
+              길드원이 디스코드에 올리지 못했을 때, 관리자가 대신 등록하는
+              용도예요. 보통은 디스코드에 <b>!투자 2</b> + 인증샷을 올리면
+              자동으로 집계됩니다.
             </p>
+
+            <div>
+              <label className="font-body mb-1 block text-sm text-ink/70">
+                투자자 닉네임
+              </label>
+              <input
+                className="field-input max-w-xs"
+                value={entryNickname}
+                onChange={(e) => setEntryNickname(e.target.value)}
+                placeholder="게임 캐릭터 닉네임"
+                maxLength={12}
+                required
+              />
+              <p className="font-body mt-1 text-xs text-ink/40">
+                사이트 계정 닉네임과 같으면 회원등급이 자동으로 표시돼요.
+              </p>
+            </div>
 
             <div>
               <label className="font-body mb-1 block text-sm text-ink/70">

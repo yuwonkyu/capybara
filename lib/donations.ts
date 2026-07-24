@@ -1,3 +1,4 @@
+import { fetchNicknameRoleMap } from "@/lib/members";
 import { getSupabaseServerClient } from "@/lib/supabase";
 import { DONATION_TIER_ROLES, MemberRole, donationTierRole } from "@/lib/types";
 
@@ -111,6 +112,7 @@ export const fetchTopDonors = async (
 const fetchRoleMap = async (): Promise<{
   byDiscord: Map<string, MemberRole>;
   byUser: Map<string, MemberRole>;
+  byNickname: Map<string, MemberRole>;
 }> => {
   const byDiscord = new Map<string, MemberRole>();
   const byUser = new Map<string, MemberRole>();
@@ -130,14 +132,18 @@ const fetchRoleMap = async (): Promise<{
     // 등급 정보를 못 가져와도 집계는 계속한다
   }
 
-  return { byDiscord, byUser };
+  // 디스코드 계정 연동이 안 된 경우, 닉네임 텍스트가 같으면 등급을 표시한다.
+  // (실제 권한 부여가 아니라 표시용 폴백이라 안전하다 — 없으면 계속 "미연동")
+  const byNickname = await fetchNicknameRoleMap();
+
+  return { byDiscord, byUser, byNickname };
 };
 
 // 기부 내역을 사람별로 합산해 엑셀용 표를 만든다.
 export const summarize = async (
   donations: Donation[]
 ): Promise<DonationSummary> => {
-  const { byDiscord, byUser } = await fetchRoleMap();
+  const { byDiscord, byUser, byNickname } = await fetchRoleMap();
 
   // 같은 사람은 디스코드 ID → 사이트 계정 → 닉네임 순으로 묶는다
   const map = new Map<string, DonorRow>();
@@ -147,6 +153,7 @@ export const summarize = async (
     const role =
       (d.discord_user_id && byDiscord.get(d.discord_user_id)) ||
       (d.user_id && byUser.get(d.user_id)) ||
+      byNickname.get(d.nickname.trim()) ||
       null;
 
     const prev =

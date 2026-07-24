@@ -56,3 +56,18 @@ export const listMembers = async (): Promise<MemberInfo[]> => {
 
   return members;
 };
+
+// 닉네임 텍스트로 회원등급을 찾기 위한 맵 (디스코드 ID 연동이 안 된 경우의 표시용 폴백)
+export const fetchNicknameRoleMap = async (): Promise<Map<string, MemberRole>> => {
+  try {
+    const members = await listMembers();
+    const map = new Map<string, MemberRole>();
+    for (const m of members) {
+      const key = m.nickname.trim();
+      if (key) map.set(key, m.role);
+    }
+    return map;
+  } catch {
+    return new Map();
+  }
+};
