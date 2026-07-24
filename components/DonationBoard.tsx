@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChangeEvent, FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useRef, useState } from "react";
 import {
   Donation,
   DonationSummary,
@@ -85,8 +85,15 @@ const DonationBoard = ({
     }
   };
 
+  // React state 업데이트는 비동기라, 버튼을 빠르게 연타하면 disabled가 반영되기 전에
+  // 두 번째 클릭이 통과할 수 있다. ref로 즉시(동기) 막아 진짜 중복 제출을 방지한다.
+  const submittingRef = useRef(false);
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+
     setError(null);
     setSubmitting(true);
 
@@ -113,6 +120,7 @@ const DonationBoard = ({
       setError(err instanceof Error ? err.message : "기부 등록에 실패했습니다.");
     } finally {
       setSubmitting(false);
+      submittingRef.current = false;
     }
   };
 
