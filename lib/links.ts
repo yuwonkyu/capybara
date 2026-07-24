@@ -8,6 +8,11 @@ export type ExternalLink = {
 
 export const EXTERNAL_LINKS: ExternalLink[] = [
   {
+    label: "업데이트",
+    href: "https://mapleplanet.co.kr/board/update",
+    description: "메이플 플래닛 공식 업데이트 바로보기",
+  },
+  {
     label: "유튜브",
     href: "https://www.youtube.com/@kindcapybara",
     description: "친절한 카피바라씨 유튜브 채널",
