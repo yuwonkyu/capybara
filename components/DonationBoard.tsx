@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useRef, useState } from "react";
+import { compressImage } from "@/lib/compress-image";
+import { optimizedImageUrl } from "@/lib/optimized-image";
 import {
   Donation,
   DonationSummary,
@@ -74,7 +76,8 @@ const DonationBoard = ({
     setUploading(true);
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      // 트래픽 절약을 위해 업로드 전에 리사이즈·WebP 압축
+      formData.append("file", await compressImage(file));
       const res = await fetch("/api/upload", { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "이미지 업로드에 실패했습니다.");
@@ -358,7 +361,7 @@ const DonationBoard = ({
               {imageUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={imageUrl}
+                  src={optimizedImageUrl(imageUrl, 640)}
                   alt="인증 스크린샷 미리보기"
                   className="mt-2 max-h-40 rounded-xl border border-sand object-contain"
                 />
@@ -608,14 +611,14 @@ const DonationBoard = ({
 
                   {d.image_url && (
                     <a
-                      href={d.image_url}
+                      href={optimizedImageUrl(d.image_url, 1920)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="mt-2 inline-block"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={d.image_url}
+                        src={optimizedImageUrl(d.image_url, 640)}
                         alt="기부 인증 스크린샷"
                         className="max-h-32 rounded-lg border border-sand object-contain"
                       />

@@ -43,7 +43,11 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseServerClient();
     const { error: uploadError } = await supabase.storage
       .from("post-images")
-      .upload(path, buffer, { contentType: file.type });
+      .upload(path, buffer, {
+        contentType: file.type,
+        // 파일명이 UUID라 내용이 바뀌지 않으므로 브라우저/CDN이 1년간 캐시하게 한다
+        cacheControl: "31536000",
+      });
 
     if (uploadError) throw uploadError;
 

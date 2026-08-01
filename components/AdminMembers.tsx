@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { MemberInfo } from "@/lib/members";
+import { optimizedImageUrl } from "@/lib/optimized-image";
 import { MemberRole, ROLE_LABELS, ROLE_ORDER } from "@/lib/types";
 
 type AdminMembersProps = {
@@ -158,7 +159,7 @@ const AdminMembers = ({
               {member.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={member.avatarUrl}
+                  src={optimizedImageUrl(member.avatarUrl, 96)}
                   alt=""
                   className="h-9 w-9 shrink-0 rounded-full border border-sand object-cover"
                 />

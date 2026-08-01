@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { optimizedImageUrl } from "@/lib/optimized-image";
 import { useAuthUser } from "@/lib/use-auth-user";
 import { getAvatarUrl, getDisplayName } from "@/lib/user";
 
@@ -89,7 +90,7 @@ const AuthButton = (): JSX.Element | null => {
       {avatarUrl && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={avatarUrl}
+          src={optimizedImageUrl(avatarUrl, 96)}
           alt="프로필 사진"
           className="h-7 w-7 rounded-full border border-sand object-cover"
         />

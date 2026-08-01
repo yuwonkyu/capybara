@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { ChangeEvent, ClipboardEvent, FormEvent, useRef, useState } from "react";
+import { compressImage } from "@/lib/compress-image";
 import { BOARD_CATEGORIES, BoardConfig } from "@/lib/types";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -73,17 +74,16 @@ const PostForm = ({
     const images = files.filter((f) => f.type.startsWith("image/"));
     if (images.length === 0) return;
 
-    for (const file of images) {
-      if (file.size > MAX_IMAGE_SIZE) {
-        setError("이미지는 장당 5MB 이하만 올릴 수 있어요.");
-        return;
-      }
-    }
-
     setError(null);
     setUploading(true);
     try {
-      for (const file of images) {
+      for (const raw of images) {
+        // 트래픽 절약을 위해 업로드 전에 리사이즈·WebP 압축
+        const file = await compressImage(raw);
+        if (file.size > MAX_IMAGE_SIZE) {
+          setError("이미지는 장당 5MB 이하만 올릴 수 있어요.");
+          return;
+        }
         const url = await uploadImage(file);
         insertAtCursor(`\n![이미지](${url})\n`);
         setImageUrls((prev) => [...prev, url]);

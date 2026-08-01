@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
+import { optimizedImageUrl } from "@/lib/optimized-image";
 
 type PostContentProps = {
   content: string;
@@ -76,7 +77,7 @@ const PostContent = ({ content, extraImages = [] }: PostContentProps): JSX.Eleme
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={node.url}
+                  src={optimizedImageUrl(node.url, 1080)}
                   alt="게시글 이미지"
                   className="max-h-[600px] w-auto max-w-full cursor-zoom-in rounded-2xl border border-sand object-contain"
                 />
@@ -112,7 +113,7 @@ const PostContent = ({ content, extraImages = [] }: PostContentProps): JSX.Eleme
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={url}
+                src={optimizedImageUrl(url, 1080)}
                 alt="게시글 첨부 이미지"
                 className="w-full cursor-zoom-in rounded-2xl border border-sand object-cover"
               />
@@ -138,7 +139,7 @@ const PostContent = ({ content, extraImages = [] }: PostContentProps): JSX.Eleme
           </button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={lightbox}
+            src={optimizedImageUrl(lightbox, 1920)}
             alt="크게 보기"
             onClick={(e) => e.stopPropagation()}
             className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"

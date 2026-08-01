@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { compressImage } from "@/lib/compress-image";
+import { optimizedImageUrl } from "@/lib/optimized-image";
 import { useAuthUser } from "@/lib/use-auth-user";
 import {
   getAvatarUrl,
@@ -63,7 +65,7 @@ const ProfileForm = (): JSX.Element => {
     );
   }
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const selected = event.target.files?.[0];
     event.target.value = "";
     if (!selected) return;
@@ -72,13 +74,16 @@ const ProfileForm = (): JSX.Element => {
       setError("이미지 파일만 올릴 수 있어요.");
       return;
     }
-    if (selected.size > MAX_AVATAR_SIZE) {
+
+    // 아바타는 작게 표시되므로 512px로 줄여 업로드 (트래픽 절약)
+    const compressed = await compressImage(selected, 512);
+    if (compressed.size > MAX_AVATAR_SIZE) {
       setError("프로필 사진은 5MB 이하만 올릴 수 있어요.");
       return;
     }
 
     setError(null);
-    setFile(selected);
+    setFile(compressed);
   };
 
   const handleRemoveAvatar = () => {
@@ -143,7 +148,7 @@ const ProfileForm = (): JSX.Element => {
           {shownAvatar ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={shownAvatar}
+              src={optimizedImageUrl(shownAvatar, 256)}
               alt="프로필 사진 미리보기"
               className="h-20 w-20 rounded-full border border-sand object-cover"
             />
