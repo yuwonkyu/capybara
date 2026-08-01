@@ -79,6 +79,8 @@ const PostContent = ({ content, extraImages = [] }: PostContentProps): JSX.Eleme
                 <img
                   src={optimizedImageUrl(node.url, 1080)}
                   alt="게시글 이미지"
+                  loading="lazy"
+                  decoding="async"
                   className="max-h-[600px] w-auto max-w-full cursor-zoom-in rounded-2xl border border-sand object-contain"
                 />
               </button>
@@ -115,6 +117,8 @@ const PostContent = ({ content, extraImages = [] }: PostContentProps): JSX.Eleme
               <img
                 src={optimizedImageUrl(url, 1080)}
                 alt="게시글 첨부 이미지"
+                loading="lazy"
+                decoding="async"
                 className="w-full cursor-zoom-in rounded-2xl border border-sand object-cover"
               />
             </button>

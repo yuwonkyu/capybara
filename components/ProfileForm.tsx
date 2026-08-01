@@ -150,6 +150,8 @@ const ProfileForm = (): JSX.Element => {
             <img
               src={optimizedImageUrl(shownAvatar, 256)}
               alt="프로필 사진 미리보기"
+              loading="lazy"
+              decoding="async"
               className="h-20 w-20 rounded-full border border-sand object-cover"
             />
           ) : (

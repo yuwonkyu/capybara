@@ -161,6 +161,8 @@ const AdminMembers = ({
                 <img
                   src={optimizedImageUrl(member.avatarUrl, 96)}
                   alt=""
+                  loading="lazy"
+                  decoding="async"
                   className="h-9 w-9 shrink-0 rounded-full border border-sand object-cover"
                 />
               ) : (

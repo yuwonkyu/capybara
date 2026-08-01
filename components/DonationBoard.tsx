@@ -363,6 +363,8 @@ const DonationBoard = ({
                 <img
                   src={optimizedImageUrl(imageUrl, 640)}
                   alt="인증 스크린샷 미리보기"
+                  loading="lazy"
+                  decoding="async"
                   className="mt-2 max-h-40 rounded-xl border border-sand object-contain"
                 />
               )}
@@ -620,6 +622,8 @@ const DonationBoard = ({
                       <img
                         src={optimizedImageUrl(d.image_url, 640)}
                         alt="기부 인증 스크린샷"
+                        loading="lazy"
+                        decoding="async"
                         className="max-h-32 rounded-lg border border-sand object-contain"
                       />
                     </a>

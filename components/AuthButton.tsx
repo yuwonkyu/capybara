@@ -92,6 +92,8 @@ const AuthButton = (): JSX.Element | null => {
         <img
           src={optimizedImageUrl(avatarUrl, 96)}
           alt="프로필 사진"
+          loading="lazy"
+          decoding="async"
           className="h-7 w-7 rounded-full border border-sand object-cover"
         />
       )}
