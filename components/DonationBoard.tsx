@@ -48,6 +48,8 @@ const DonationBoard = ({
 
   // 집계표는 인원이 많으면 길어져서 접을 수 있게 한다
   const [tableOpen, setTableOpen] = useState(true);
+  // 최근 기부 내역도 건수가 많아지면 페이지가 너무 길어져서 접을 수 있게 한다
+  const [historyOpen, setHistoryOpen] = useState(true);
 
   // 투자 횟수 인라인 수정 (실수 방지를 위해 자동 저장 대신 명시적으로 저장)
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -477,161 +479,186 @@ const DonationBoard = ({
       )}
 
       <section className="cute-card">
-        <h2 className="title mb-3">최근 기부 내역</h2>
+        {/* 제목 전체를 눌러 접었다 펼 수 있게 한다 */}
+        <button
+          type="button"
+          onClick={() => setHistoryOpen((v) => !v)}
+          className="flex items-center gap-2"
+          aria-expanded={historyOpen}
+        >
+          <span
+            className={`font-body text-sm text-mintdeep transition-transform ${
+              historyOpen ? "rotate-90" : ""
+            }`}
+            aria-hidden
+          >
+            ▶
+          </span>
+          <span className="title mb-0">최근 기부 내역</span>
+          {donations && donations.length > 0 && (
+            <span className="font-body text-xs text-ink/45">
+              {donations.length}건
+            </span>
+          )}
+        </button>
 
-        {!donations && (
-          <p className="font-body rounded-xl bg-sky/20 p-4 text-sm text-skydeep">
-            기부 내역을 불러오지 못했어요. Supabase 연동 설정을 확인해주세요.
-          </p>
-        )}
+        {historyOpen && (
+          <div className="mt-3">
+            {!donations && (
+              <p className="font-body rounded-xl bg-sky/20 p-4 text-sm text-skydeep">
+                기부 내역을 불러오지 못했어요. Supabase 연동 설정을 확인해주세요.
+              </p>
+            )}
 
-        {donations && donations.length === 0 && (
-          <p className="font-body p-6 text-center text-sm text-ink/50">
-            아직 등록된 기부가 없어요.
-            {isAdmin && " [디스코드 동기화]를 눌러 가져와보세요."}
-          </p>
-        )}
+            {donations && donations.length === 0 && (
+              <p className="font-body p-6 text-center text-sm text-ink/50">
+                아직 등록된 기부가 없어요.
+                {isAdmin && " [디스코드 동기화]를 눌러 가져와보세요."}
+              </p>
+            )}
 
-        {donations && donations.length > 0 && (
-          <ul className="divide-y divide-sand/60 overflow-hidden rounded-2xl border border-sand/70">
-            {donations.map((d) => {
-              const canDelete = isAdmin || d.user_id === currentUserId;
-              return (
-                <li
-                  key={d.id}
-                  className={`px-3 py-3 ${d.needs_review ? "bg-amber-50/60" : ""}`}
-                >
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
-                    <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
-                      <span className="font-body text-sm font-semibold text-ink">
-                        {d.nickname}
-                      </span>
-                      <span className="font-body text-sm font-semibold text-mintdeep">
-                        {d.invest_count}회
-                      </span>
-                      <span className="font-body text-xs text-ink/50">
-                        · {formatMan(d.amount_man)}
-                      </span>
-                      {d.discord_user_id && (
-                        <span className="font-body text-[11px] text-skydeep">
-                          디스코드
-                        </span>
-                      )}
-                      {d.needs_review && (
-                        <span className="font-body rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
-                          확인필요
-                        </span>
-                      )}
-                    </span>
-                    <span className="flex shrink-0 items-center gap-2 font-body text-xs text-ink/45">
-                      <span>{formatDate(d.created_at)}</span>
-                      {isAdmin && (
-                        <button
-                          type="button"
-                          onClick={() => startEdit(d)}
-                          className="text-ink/40 hover:text-mintdeep"
-                        >
-                          수정
-                        </button>
-                      )}
-                      {canDelete && (
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(d.id)}
-                          className="text-ink/40 hover:text-red-500"
-                        >
-                          삭제
-                        </button>
-                      )}
-                    </span>
-                  </div>
-
-                  {/* 인증 당시 디스코드에 쓴 원문 — 스크린샷만으로 헷갈릴 때 참고 */}
-                  {d.discord_content && (
-                    <p className="font-body mt-1.5 rounded-lg bg-sky/15 px-2 py-1.5 text-xs text-ink/70">
-                      💬 {d.discord_content}
-                    </p>
-                  )}
-
-                  {d.note && (
-                    <p className="font-body mt-1 text-xs text-ink/60">{d.note}</p>
-                  )}
-
-                  {isAdmin && d.needs_review && editingId !== d.id && (
-                    <p className="font-body mt-2 text-xs text-amber-800">
-                      ⚠️ 인증샷을 보고 <b>수정</b>을 눌러 실제 투자 횟수를 확정해주세요.
-                    </p>
-                  )}
-
-                  {isAdmin && editingId === d.id && (
-                    <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-mint/25 px-2 py-2">
-                      <span className="font-body text-xs text-mintdeep">투자 횟수</span>
-                      <input
-                        type="number"
-                        min={0}
-                        value={editCount}
-                        onChange={(e) => setEditCount(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") handleSaveCount(d.id);
-                          if (e.key === "Escape") cancelEdit();
-                        }}
-                        autoFocus
-                        className="w-20 rounded-lg border border-mintdeep/40 bg-white px-2 py-1 font-body text-sm text-ink"
-                      />
-                      <span className="font-body text-xs text-mintdeep">
-                        회 = {Number(editCount || 0) * INVEST_UNIT_MAN}만 메소
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleSaveCount(d.id)}
-                        disabled={savingEdit}
-                        className="font-body rounded-full bg-mintdeep px-3 py-1 text-xs font-semibold text-white disabled:opacity-60"
-                      >
-                        {savingEdit ? "저장 중..." : "저장"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={cancelEdit}
-                        disabled={savingEdit}
-                        className="font-body rounded-full border border-sand bg-white px-3 py-1 text-xs text-ink/70"
-                      >
-                        취소
-                      </button>
-                    </div>
-                  )}
-
-                  {discordLink(d) && (
-                    <a
-                      href={discordLink(d)!}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-body mt-1.5 inline-block text-xs text-skydeep hover:underline"
+            {donations && donations.length > 0 && (
+              <ul className="divide-y divide-sand/60 overflow-hidden rounded-2xl border border-sand/70">
+                {donations.map((d) => {
+                  const canDelete = isAdmin || d.user_id === currentUserId;
+                  return (
+                    <li
+                      key={d.id}
+                      className={`px-3 py-3 ${d.needs_review ? "bg-amber-50/60" : ""}`}
                     >
-                      디스코드 원본 메시지 보기 ↗
-                    </a>
-                  )}
+                      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+                        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+                          <span className="font-body text-sm font-semibold text-ink">
+                            {d.nickname}
+                          </span>
+                          <span className="font-body text-sm font-semibold text-mintdeep">
+                            {d.invest_count}회
+                          </span>
+                          <span className="font-body text-xs text-ink/50">
+                            · {formatMan(d.amount_man)}
+                          </span>
+                          {d.discord_user_id && (
+                            <span className="font-body text-[11px] text-skydeep">
+                              디스코드
+                            </span>
+                          )}
+                          {d.needs_review && (
+                            <span className="font-body rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+                              확인필요
+                            </span>
+                          )}
+                        </span>
+                        <span className="flex shrink-0 items-center gap-2 font-body text-xs text-ink/45">
+                          <span>{formatDate(d.created_at)}</span>
+                          {isAdmin && (
+                            <button
+                              type="button"
+                              onClick={() => startEdit(d)}
+                              className="text-ink/40 hover:text-mintdeep"
+                            >
+                              수정
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(d.id)}
+                              className="text-ink/40 hover:text-red-500"
+                            >
+                              삭제
+                            </button>
+                          )}
+                        </span>
+                      </div>
 
-                  {d.image_url && (
-                    <a
-                      href={optimizedImageUrl(d.image_url, 1920)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-2 inline-block"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={optimizedImageUrl(d.image_url, 640)}
-                        alt="기부 인증 스크린샷"
-                        loading="lazy"
-                        decoding="async"
-                        className="max-h-32 rounded-lg border border-sand object-contain"
-                      />
-                    </a>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+                      {/* 인증 당시 디스코드에 쓴 원문 — 스크린샷만으로 헷갈릴 때 참고 */}
+                      {d.discord_content && (
+                        <p className="font-body mt-1.5 rounded-lg bg-sky/15 px-2 py-1.5 text-xs text-ink/70">
+                          💬 {d.discord_content}
+                        </p>
+                      )}
+
+                      {d.note && (
+                        <p className="font-body mt-1 text-xs text-ink/60">{d.note}</p>
+                      )}
+
+                      {isAdmin && d.needs_review && editingId !== d.id && (
+                        <p className="font-body mt-2 text-xs text-amber-800">
+                          ⚠️ 인증샷을 보고 <b>수정</b>을 눌러 실제 투자 횟수를 확정해주세요.
+                        </p>
+                      )}
+
+                      {isAdmin && editingId === d.id && (
+                        <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-mint/25 px-2 py-2">
+                          <span className="font-body text-xs text-mintdeep">투자 횟수</span>
+                          <input
+                            type="number"
+                            min={0}
+                            value={editCount}
+                            onChange={(e) => setEditCount(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleSaveCount(d.id);
+                              if (e.key === "Escape") cancelEdit();
+                            }}
+                            autoFocus
+                            className="w-20 rounded-lg border border-mintdeep/40 bg-white px-2 py-1 font-body text-sm text-ink"
+                          />
+                          <span className="font-body text-xs text-mintdeep">
+                            회 = {Number(editCount || 0) * INVEST_UNIT_MAN}만 메소
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleSaveCount(d.id)}
+                            disabled={savingEdit}
+                            className="font-body rounded-full bg-mintdeep px-3 py-1 text-xs font-semibold text-white disabled:opacity-60"
+                          >
+                            {savingEdit ? "저장 중..." : "저장"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelEdit}
+                            disabled={savingEdit}
+                            className="font-body rounded-full border border-sand bg-white px-3 py-1 text-xs text-ink/70"
+                          >
+                            취소
+                          </button>
+                        </div>
+                      )}
+
+                      {discordLink(d) && (
+                        <a
+                          href={discordLink(d)!}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-body mt-1.5 inline-block text-xs text-skydeep hover:underline"
+                        >
+                          디스코드 원본 메시지 보기 ↗
+                        </a>
+                      )}
+
+                      {d.image_url && (
+                        <a
+                          href={optimizedImageUrl(d.image_url, 1920)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 inline-block"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={optimizedImageUrl(d.image_url, 640)}
+                            alt="기부 인증 스크린샷"
+                            loading="lazy"
+                            decoding="async"
+                            className="max-h-32 rounded-lg border border-sand object-contain"
+                          />
+                        </a>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
         )}
       </section>
     </div>
