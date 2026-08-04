@@ -49,37 +49,6 @@ const resolveInvestCount = (
   return { count: 0, needsReview: true };
 };
 
-// 디스코드 첨부 이미지는 URL이 만료되므로 Supabase Storage로 옮겨 영구 보관한다.
-const copyAttachmentToStorage = async (
-  message: DiscordMessage
-): Promise<string | null> => {
-  const image = message.attachments.find(
-    (a) => a.content_type && IMAGE_TYPES.includes(a.content_type)
-  );
-  if (!image) return null;
-
-  try {
-    const res = await fetch(image.url);
-    if (!res.ok) return null;
-
-    const buffer = Buffer.from(await res.arrayBuffer());
-    const ext = image.content_type === "image/jpeg" ? "jpg" : image.content_type!.split("/")[1];
-    const path = `discord/${message.id}.${ext}`;
-
-    const supabase = getSupabaseServerClient();
-    const { error } = await supabase.storage
-      .from("post-images")
-      .upload(path, buffer, { contentType: image.content_type, upsert: true });
-
-    if (error) return null;
-
-    const { data } = supabase.storage.from("post-images").getPublicUrl(path);
-    return data.publicUrl;
-  } catch {
-    return null;
-  }
-};
-
 export async function POST() {
   const user = await getAuthUser();
   if (!user) {
@@ -145,14 +114,13 @@ export async function POST() {
         // 표에는 캐릭터명만 쓰고("전태영"), 원본 닉네임은 따로 보관한다
         const nickname = extractGameNick(fullNick);
 
-        const imageUrl = await copyAttachmentToStorage(message);
-
         const { error } = await supabase.from("donations").insert({
           nickname,
           guild,
           invest_count: count,
           amount_man: count * INVEST_UNIT_MAN,
-          image_url: imageUrl,
+          // 스크린샷은 Storage에 복사하지 않고 디스코드 원본 링크로만 확인한다(트래픽 절감)
+          image_url: null,
           discord_user_id: message.author.id,
           discord_name: fullNick,
           discord_message_id: message.id,
