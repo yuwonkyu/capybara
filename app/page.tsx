@@ -7,7 +7,7 @@ import ShortcutLinks from "@/components/ShortcutLinks";
 import { fetchTopDonors } from "@/lib/donations";
 import { GAME_INFO_LINKS } from "@/lib/links";
 import { fetchBoardPosts, fetchPopularPosts } from "@/lib/posts";
-import { BOARD_TYPES } from "@/lib/types";
+import { BOARD_TYPES, BOARDS_ENABLED } from "@/lib/types";
 
 // 홈은 로그인 여부와 무관한 부분만 서버에서 렌더하고 캐시한다.
 // 새 글은 60초 이내 또는 글 작성 시 revalidatePath로 갱신된다.
@@ -20,8 +20,8 @@ const highlights = [
 
 const Home = async (): Promise<JSX.Element> => {
   const [notices, popular, capyTop, capylandTop] = await Promise.all([
-    fetchBoardPosts("notice", 5),
-    fetchPopularPosts(5),
+    BOARDS_ENABLED ? fetchBoardPosts("notice", 5) : Promise.resolve([]),
+    BOARDS_ENABLED ? fetchPopularPosts(5) : Promise.resolve([]),
     fetchTopDonors("카피", 3),
     fetchTopDonors("카피랜드", 3),
   ]);
@@ -74,25 +74,29 @@ const Home = async (): Promise<JSX.Element> => {
         </div>
       </section>
 
-      <section className="mb-5 grid grid-cols-2 gap-2.5 sm:gap-3">
-        {BOARD_TYPES.map((board) => (
-          <Link
-            key={board.type}
-            href={`/board/${board.type}`}
-            className="cute-card block p-4 transition hover:-translate-y-1 sm:p-5"
-          >
-            <p className="font-display text-lg text-mintdeep sm:text-xl">{board.label}</p>
-            <p className="font-body mt-1 line-clamp-2 text-xs text-ink/60 sm:text-sm">
-              {board.description}
-            </p>
-          </Link>
-        ))}
-      </section>
+      {BOARDS_ENABLED && (
+        <section className="mb-5 grid grid-cols-2 gap-2.5 sm:gap-3">
+          {BOARD_TYPES.map((board) => (
+            <Link
+              key={board.type}
+              href={`/board/${board.type}`}
+              className="cute-card block p-4 transition hover:-translate-y-1 sm:p-5"
+            >
+              <p className="font-display text-lg text-mintdeep sm:text-xl">{board.label}</p>
+              <p className="font-body mt-1 line-clamp-2 text-xs text-ink/60 sm:text-sm">
+                {board.description}
+              </p>
+            </Link>
+          ))}
+        </section>
+      )}
 
-      <section className="mb-5 grid gap-4 md:grid-cols-2">
-        <LatestPosts board="notice" title="최근 공지" posts={notices} />
-        <PopularPosts posts={popular} />
-      </section>
+      {BOARDS_ENABLED && (
+        <section className="mb-5 grid gap-4 md:grid-cols-2">
+          <LatestPosts board="notice" title="최근 공지" posts={notices} />
+          <PopularPosts posts={popular} />
+        </section>
+      )}
 
       <section className="mb-5 grid gap-4 md:grid-cols-2">
         <DonationRankings guild="카피" donors={capyTop} />

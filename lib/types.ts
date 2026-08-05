@@ -8,6 +8,10 @@ export type BoardConfig = {
   externalUrl?: string;
 };
 
+// 공지사항/게시판을 실제로 쓰지 않아 잠시 내비게이션·홈 화면에서 숨겨둔 스위치.
+// 다시 쓰게 되면 true로 되돌리면 된다 (게시판 라우트/데이터는 그대로 남아있음).
+export const BOARDS_ENABLED = false;
+
 export const BOARD_TYPES: BoardConfig[] = [
   {
     type: "notice",

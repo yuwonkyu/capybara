@@ -3,17 +3,19 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import AuthButton from "@/components/AuthButton";
-import { BOARD_TYPES } from "@/lib/types";
+import { BOARD_TYPES, BOARDS_ENABLED } from "@/lib/types";
 import { getVisibleLinks } from "@/lib/links";
 import { useAuthUser } from "@/lib/use-auth-user";
 
 const NAV_LINKS = [
   { href: "/", label: "홈", external: false },
-  ...BOARD_TYPES.map((board) => ({
-    href: board.externalUrl ?? `/board/${board.type}`,
-    label: board.label,
-    external: Boolean(board.externalUrl),
-  })),
+  ...(BOARDS_ENABLED
+    ? BOARD_TYPES.map((board) => ({
+        href: board.externalUrl ?? `/board/${board.type}`,
+        label: board.label,
+        external: Boolean(board.externalUrl),
+      }))
+    : []),
   { href: "/donations", label: "기부현황", external: false },
 ];
 
