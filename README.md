@@ -56,6 +56,20 @@ npm run dev
    - `Site URL` 을 배포 주소(예: `https://capyguild.vercel.app`)로 설정하고,
    - `Redirect URLs` 에 `http://localhost:3000/**` 와 배포 주소(`https://capyguild.vercel.app/**`)를 추가합니다.
 
+## 디스코드 로그인 설정 (선택)
+
+카카오 로그인과 별개로 디스코드 로그인도 지원합니다. Supabase Auth의 Discord 프로바이더를 사용합니다.
+
+1. [discord.com/developers/applications](https://discord.com/developers/applications) 에서 **New Application** 으로 앱을 만듭니다.
+2. **OAuth2 > General** 에서 `CLIENT ID` 와 `CLIENT SECRET` 을 확인(생성)해둡니다.
+3. **OAuth2 > General > Redirects** 에 아래 주소를 등록합니다.
+   ```
+   https://<Supabase프로젝트ID>.supabase.co/auth/v1/callback
+   ```
+   (Supabase 대시보드 > Authentication > Providers > Discord 화면에 나오는 Callback URL을 그대로 복사하면 됩니다.)
+4. Supabase 대시보드 > **Authentication > Providers > Discord** 를 켜고, 디스코드의 `CLIENT ID` 와 `CLIENT SECRET` 을 입력해 저장합니다.
+5. 카카오와 동일한 `Site URL` / `Redirect URLs` 설정을 그대로 사용하면 되므로 URL Configuration은 추가로 손댈 것이 없습니다.
+
 ### 관리자(공지/업데이트 작성 권한) 등록
 
 공지사항·업데이트 게시판은 `admins` 테이블에 등록된 계정만 글을 쓸 수 있습니다.
