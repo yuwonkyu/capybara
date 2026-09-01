@@ -203,12 +203,15 @@ const DonationBoard = ({
     }
   };
 
-  // 카피·카피랜드를 각각 시트로 담은 엑셀 파일을 서버에서 만들어 내려받는다.
-  const handleDownloadExcel = async () => {
+  // 카피·카피랜드를 각각 시트로 담거나, 디스코드 업로드 날짜 기준 월별 시트로
+  // 나눈 엑셀 파일을 서버에서 만들어 내려받는다.
+  const handleDownloadExcel = async (mode: "guild" | "month") => {
     setError(null);
     setExporting(true);
     try {
-      const res = await fetch("/api/donations/export");
+      const res = await fetch(
+        mode === "month" ? "/api/donations/export?by=month" : "/api/donations/export"
+      );
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? "엑셀 파일을 만들지 못했습니다.");
@@ -217,7 +220,7 @@ const DonationBoard = ({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "길드기부현황.xlsx";
+      a.download = mode === "month" ? "월별기부내역.xlsx" : "길드기부현황.xlsx";
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
@@ -421,14 +424,24 @@ const DonationBoard = ({
             </button>
 
             {isAdmin && (
-              <button
-                type="button"
-                onClick={handleDownloadExcel}
-                className="btn-secondary"
-                disabled={exporting}
-              >
-                {exporting ? "만드는 중..." : "엑셀 다운로드 (카피+카피랜드)"}
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleDownloadExcel("guild")}
+                  className="btn-secondary"
+                  disabled={exporting}
+                >
+                  {exporting ? "만드는 중..." : "엑셀 다운로드 (카피+카피랜드)"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDownloadExcel("month")}
+                  className="btn-secondary"
+                  disabled={exporting}
+                >
+                  {exporting ? "만드는 중..." : "엑셀 다운로드 (월별)"}
+                </button>
+              </div>
             )}
           </div>
 
